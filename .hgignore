@@ -1,0 +1,6 @@
+syntax: glob
+
+*.gz
+*.komodoproject
+app/styles/*.css
+bin/scripts/node_modules
