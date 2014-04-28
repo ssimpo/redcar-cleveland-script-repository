@@ -4,3 +4,4 @@ syntax: glob
 *.komodoproject
 app/styles/*.css
 bin/scripts/node_modules
+app/scripts/lib/*

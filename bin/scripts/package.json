@@ -1,0 +1,46 @@
+{
+    "name": "angular-project",
+    "preferGlobal": false,
+    "version": "0.0.1",
+    "author": "Stephen Simpson <me@simpo.org>",
+    "description": "Node module collection used in scripts to make Angular project easier.",
+    "contributors": [{
+        "name": "Stephen Simpson",
+        "email": "me@simpo.org"
+    }],
+    "bin": {
+		"bowerUpdate": "./.bin/bowerUpdate"
+    },
+    "scripts": {
+        "start": "node ./.bin/bowerUpdate"
+    },
+    "keywords": [ "angularjs", "bower" ],
+    "dependencies" : {
+		"q": "~1.0.0",
+        "mv": "~2.0.0",
+        "bower": "~1.2.0",
+		"grunt": "~0.4.0",
+		"grunt-cli": "~0.1.0",
+		"karma": "~0.12.0",
+		"grunt-karma": "~0.8.0",
+		"grunt-ngdoc": "~0.1.0",
+		"phantomjs": "1.9.6-0",
+		"karma-phantomjs-launcher": "~0.1.0",
+		"karma-ie-launcher": "~0.1.0",
+		"grunt-contrib-less": "~0.10.0",
+		"grunt-gaze": "~0.1.0",
+		"grunt-concurrent": "~0.5.0"
+    },
+    "license": "MIT",
+    "engines": {
+        "node": ">=0.10"
+    },
+	"app": {
+		"directories": {
+			"styles": "../../app/styles",
+			"scripts": "../../app/scripts",
+			"unittests": "../../test/unit",
+			"testlib": "../../test/lib"
+		}
+	}
+}
