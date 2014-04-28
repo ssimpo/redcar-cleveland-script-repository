@@ -1,6 +1,7 @@
 (function(){
 	var bowserSniffed = false;
 	var isIE = false;
+	var apps = [];
 	
 	function isProperty(obj, key){
 		return Object.prototype.hasOwnProperty.call(obj, key);
@@ -147,7 +148,7 @@
 	
 	var main = function($, array, domAttr, require, request){
 		function findAngularApps() {
-			return $("[ng-app]");
+			return $("[rcbc-app]");
 		}
 		
 		function getProfileUrl(appName){
@@ -159,11 +160,15 @@
 		}
 		
 		function loadProfile(appDom, callback) {
-			var appName = getNodeAttribute(appDom, "ng-app");
+			var appName = getNodeAttribute(appDom, "rcbc-app");
 			var appProfileUrl = getProfileUrl(appName);
 			ajaxGet(appProfileUrl, function(data){
 				array.forEach(data.scripts, function(url, n){
 					data.scripts[n] = addAppPathToUrl(data.scripts[n], appName);
+				});
+				apps.push({
+					"appName": appName,
+					"appNode": appDom
 				});
 				callback(data);
 			}, function(){
@@ -177,7 +182,7 @@
 				array.forEach(apps, function(appDom){
 					loadProfile(appDom, function(profile){
 						require(profile.scripts, function(){
-							console.log("HELLO");
+							console.log("DONE");
 						});
 					});
 				});
@@ -228,6 +233,9 @@
 				var loader = loaders.shift();
 				loader();
 			}else{
+				dojo.forEach(apps, function(app){
+					angular.bootstrap(app.appNode, [app.appName]);
+				});
 				callback();
 			}
 		}
@@ -241,7 +249,7 @@
 				});
 			});
 		});
-				
+		
 		runNext();
 	};
 	
