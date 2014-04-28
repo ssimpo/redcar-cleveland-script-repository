@@ -1,0 +1,1 @@
+for /r %%i in (..\app\styles\*.less) do lessc --clean-css --compress --strict-imports "%%~i" > "%%~dpni.css";
