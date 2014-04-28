@@ -1,20 +1,25 @@
 (function(){
-	Function.prototype.bind = function( obj ) {
-        var slice = [].slice,
-        args = slice.call(arguments, 1),
-        self = this,
-        nop = function () {},
-        bound = function () {
-            return self.apply( this instanceof nop ? this : ( obj || {} ),
-                args.concat( slice.call(arguments) ) );
-        };
-        nop.prototype = self.prototype;
-        bound.prototype = new nop();
-        return bound;
-    };
+	var bowserSniffed = false;
+	var isIE = false;
 	
 	function isProperty(obj, key){
 		return Object.prototype.hasOwnProperty.call(obj, key);
+	}
+	
+	if (!isProperty(Function, "bind")){
+		Function.prototype.bind = function( obj ) {
+			var slice = [].slice,
+			args = slice.call(arguments, 1),
+			self = this,
+			nop = function () {},
+			bound = function () {
+				return self.apply( this instanceof nop ? this : ( obj || {} ),
+					args.concat( slice.call(arguments) ) );
+			};
+			nop.prototype = self.prototype;
+			bound.prototype = new nop();
+			return bound;
+		};
 	}
 	
 	function appendScript(constr) {
@@ -64,7 +69,7 @@
 			script.id = constr.id;
 		}
         if (constr.onload){
-            this.addOnloadFunction(script, constr.onload, context);
+            addOnloadFunction(script, constr.onload, context);
         }
         if (constr.onerror){
             script.onerror = constr.onerror.bind(context);
@@ -105,12 +110,40 @@
             }
         };
             
-        if (this._ieVersion()) {
+        if (ieVersion()) {
             node.onreadystatechange = func.bind(context);
         } else {
             node.onload = func.bind(context);
         }
     }
+	
+	function ieVersion() {
+        // summary:
+        //      Get the Internet Explorer version (or false if other browser).
+        // note:
+        //      Code largely taken from dojo._base.sniff.
+        // returns: integer
+        //      Version number
+            
+        if (bowserSniffed) { return isIE; }
+        var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
+        if (!webkit) {
+            if (navigator.userAgent.indexOf("Opera") == -1) {
+                if(document.all) {
+                    isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
+                    var mode = document.documentMode;
+                    if(mode && mode != 5 && Math.floor(isIE) != mode){
+                        isIE = mode;
+                    }
+                }
+            }
+        }
+        
+        isIE = (((isIE == undefined) || (isIE == 0)) ? false : isIE);
+        
+		return isIE;
+    }
+	
 	
 	var main = function($, array, domAttr, require, request){
 		function findAngularApps() {
@@ -143,8 +176,6 @@
 			if(apps.length > 0){
 				array.forEach(apps, function(appDom){
 					loadProfile(appDom, function(profile){
-						console.log(location);
-						console.log(profile);
 						require(profile.scripts, function(){
 							console.log("HELLO");
 						});
@@ -208,7 +239,7 @@
 				var done = 0;
 				dojo.forEach(mids, function(mid){
 					appendScript({
-						"load": function(){
+						"onload": function(){
 							done++;
 							if (done >= mids.length) {
 								callback();
