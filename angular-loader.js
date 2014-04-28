@@ -159,6 +159,10 @@
 			return "/apps/" + appName + "/app/" + url;
 		}
 		
+		function calculateLibraryPath(id){
+			return "/apps/lib/lib/" + id + "/" + id + ".min.js";
+		}
+		
 		function loadProfile(appDom, callback) {
 			var appName = getNodeAttribute(appDom, "rcbc-app");
 			var appProfileUrl = getProfileUrl(appName);
@@ -166,6 +170,10 @@
 				array.forEach(data.scripts, function(url, n){
 					data.scripts[n] = addAppPathToUrl(data.scripts[n], appName);
 				});
+				for (var i = (data.libraries.length-1); i >= 0; i--) {
+					var id = data.libraries[i];
+					data.scripts.unshift(calculateLibraryPath(id));
+				}
 				apps.push({
 					"appName": appName,
 					"appNode": appDom
