@@ -1,0 +1,7 @@
+{
+	"scripts": [
+		"scripts/lib/angular/angular.min.js",
+		"scripts/lib/angular-route/angular-route.min.js",
+		"scripts/app.js"
+	]
+}
