@@ -1,4 +1,4 @@
-(function(){
+(function(global){
 	var bowserSniffed = false;
 	var isIE = false;
 	var apps = [];
@@ -172,109 +172,124 @@
 		runNext();
 	};
 	
-	var main = function($, array, domAttr, request){
-		function findAngularApps() {
-			return $("[rcbc-app]");
-		}
+	function findAngularApps($) {
+		return $("[rcbc-app]");
+	}
+	
+	function getProfileUrl(appName){
+		return "/apps/" + appName + "/app/profile.json";
+	}
 		
-		function getProfileUrl(appName){
-			return "/apps/" + appName + "/app/profile.json";
-		}
+	function addAppPathToUrl(url, appName){
+		return "/apps/" + appName + "/app/" + url;
+	}
 		
-		function addAppPathToUrl(url, appName){
-			return "/apps/" + appName + "/app/" + url;
-		}
-		
-		function calculateLibraryPath(id){
-			return "/apps/lib/lib/" + id + "/" + id + ".min.js";
-		}
-		
-		function loadProfile(appDom, callback) {
-			var appName = getNodeAttribute(appDom, "rcbc-app");
-			var appProfileUrl = getProfileUrl(appName);
-			ajaxGet(appProfileUrl, function(data){
-				array.forEach(data.scripts, function(url, n){
-					data.scripts[n] = addAppPathToUrl(data.scripts[n], appName);
-				});
-				for (var i = (data.libraries.length-1); i >= 0; i--) {
-					var id = data.libraries[i];
-					data.scripts.unshift(calculateLibraryPath(id));
-				}
-				apps.push({
-					"appName": appName,
-					"appNode": appDom
-				});
-				callback(data);
-			}, function(){
+	function calculateLibraryPath(id){
+		return "/apps/lib/lib/" + id + "/" + id + ".min.js";
+	}
+	
+	function loadProfile(appDom, callback) {
+		var appName = getNodeAttribute(appDom, "rcbc-app");
+		var appProfileUrl = getProfileUrl(appName);
+		ajaxGet(appProfileUrl, function(data){
+			for (var i = 0; i < data.scripts.length; i++) {
+				data.scripts[i] = addAppPathToUrl(data.scripts[i], appName);
+			}
+			for (var i = (data.libraries.length-1); i >= 0; i--) {
+				var id = data.libraries[i];
+				data.scripts.unshift(calculateLibraryPath(id));
+			}
+			apps.push({
+				"appName": appName,
+				"appNode": appDom
+			});
+			callback(data);
+		}, function(){
 				console.log("ERROR");
+		});
+	}
+	
+	function ajaxGet(url, callback, errCallback){
+		callback = callback || function(){};
+		errCallback = errCallback || function(){};
+			
+		var opts = {"handleAs": "json"};
+		if(isProperty(global, "dojo")){
+			opts.load = callback;
+			opts.error = errCallback;
+			opts.url = url;
+			dojo.xhrGet(opts);
+		}else if(isProperty(global, "dojoConfig")){
+			opts.method = "get";
+			require(["dojo/query"], function(request){
+				request(url, opts).then(callback, errCallback);
 			});
 		}
+	}
 	
-		function loadApps() {
-			var apps = findAngularApps($);
-			if(apps.length > 0){
-				array.forEach(apps, function(appDom){
-					loadProfile(appDom, function(profile){
-						executeProfile(profile.scripts, function(){
+	function loadApps($) {
+		var apps = findAngularApps($);
+		if(apps.length > 0){
+			for (var i = 0; i < apps.length; i++) {
+				loadProfile(apps[i], function(profile){
+					executeProfile(profile.scripts, function(){
 							console.log("DONE");
-						});
 					});
 				});
 			}
 		}
-		
-		function ajaxGet(url, callback, errCallback){
-			callback = callback || function(){};
-			errCallback = errCallback || function(){};
-			
-			var opts = {"handleAs": "json"};
-			if (request === undefined){
-				opts.load = callback;
-				opts.error = errCallback;
-				opts.url = url;
-				dojo.xhrGet(opts);
-			}else{
-				opts.method = "get";
-				request(url, opts).then(errCallback);
-			}
-		}
-		
-		function getNodeAttribute(node, attribute){
-			// summary:
-			//		get an attribute of a node.
-			// description:
-			//		Get an attribute of a node using Dojo v1.5 or v2.0
-			//		methodology.  Assumes domAttr is undefined for v1.5.
-			// node: object HTMLElement
-			//		The node to get an attribute value for.
-			// attribute: string
-			//		The attribute name to get.
+	}
+	
+	function getNodeAttribute(node, attribute){
+		// summary:
+		//		get an attribute of a node.
+		// description:
+		//		Get an attribute of a node using Dojo v1.5 or v2.0
+		//		methodology.  Assumes domAttr is undefined for v1.5.
+		// node: object HTMLElement
+		//		The node to get an attribute value for.
+		// attribute: string
+		//		The attribute name to get.
 
-			if(domAttr !== undefined){
-				return domAttr.get(node, attribute, value);
-			}else{
-				return dojo.attr(node, attribute);
-			}
+		var result = (node.getAttribute && node.getAttribute(attribute)) || null;
+        if(!result) {
+            var attributes = node.attributes;
+            var length = attributes.length;
+            for(var i = 0; i < length; i++)
+                if(attributes[i].nodeName === attr)
+                    result = attributes[i].nodeValue;
+        }
+        return result;
+	}
+	
+	function getQuerySelector(callback) {
+		if(isProperty(global, "dojo")){
+			callback(dojo.query);
+		}else if(isProperty(global, "dojoConfig")){
+			require(["dojo/query"], callback);
+		}else if(typeof global.$ === "function"){
+			callback($);
+		}else if((typeof global.define === "function") && (typeof global.require === "function")){
+			define.amd = true;
+			require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
+		}else if(isProperty(document, "querySelector")){
+			callback(document.querySelector);
 		}
-		
-		loadApps();
-	};
+	}
 	
 	if(isProperty(window, "dojo")){
-		dojo.ready(function(){
-			main(dojo.query, dojo, undefined, undefined);
+		getQuerySelector(function($){
+			dojo.ready(function(){
+				loadApps($);
+			});
 		});
 	}else{
 		require([
 			"dojo/ready",
-			"dojo/query",
-			"dojo/array",
-			"dojo/dom-attr",
-			"dojo/request"
-		], function(ready, $, array, domAttr, request){
+		], function(ready){
 			ready(function(){
-				main($, array, domAttr, request);
+				loadApps($);
 			});
 		});
 	}
-})();
+})(window);
