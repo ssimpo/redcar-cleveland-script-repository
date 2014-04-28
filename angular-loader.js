@@ -145,8 +145,34 @@
 		return isIE;
     }
 	
+	var executeProfile = function(mids, callback){
+		var loaders = [];
+		function runNext(){
+			if(loaders.length > 0){
+				var loader = loaders.shift();
+				loader();
+			}else{
+				dojo.forEach(apps, function(app){
+					angular.bootstrap(app.appNode, [app.appName]);
+				});
+				callback();
+			}
+		}
+		
+		dojo.forEach(mids, function(mid){
+			loaders.push(function(){
+				appendScript({
+					"onload": runNext,
+					"src": location.protocol+"//"+location.host+mid,
+					"node": dojo.query("head")[0]
+				});
+			});
+		});
+		
+		runNext();
+	};
 	
-	var main = function($, array, domAttr, require, request){
+	var main = function($, array, domAttr, request){
 		function findAngularApps() {
 			return $("[rcbc-app]");
 		}
@@ -189,7 +215,7 @@
 			if(apps.length > 0){
 				array.forEach(apps, function(appDom){
 					loadProfile(appDom, function(profile){
-						require(profile.scripts, function(){
+						executeProfile(profile.scripts, function(){
 							console.log("DONE");
 						});
 					});
@@ -234,36 +260,9 @@
 		loadApps();
 	};
 	
-	var require2 = function(mids, callback){
-		var loaders = [];
-		function runNext(){
-			if(loaders.length > 0){
-				var loader = loaders.shift();
-				loader();
-			}else{
-				dojo.forEach(apps, function(app){
-					angular.bootstrap(app.appNode, [app.appName]);
-				});
-				callback();
-			}
-		}
-		
-		dojo.forEach(mids, function(mid){
-			loaders.push(function(){
-				appendScript({
-					"onload": runNext,
-					"src": location.protocol+"//"+location.host+mid,
-					"node": dojo.query("head")[0]
-				});
-			});
-		});
-		
-		runNext();
-	};
-	
 	if(isProperty(window, "dojo")){
 		dojo.ready(function(){
-			main(dojo.query, dojo, undefined, require2, undefined);
+			main(dojo.query, dojo, undefined, undefined);
 		});
 	}else{
 		require([
@@ -274,7 +273,7 @@
 			"dojo/request"
 		], function(ready, $, array, domAttr, request){
 			ready(function(){
-				main($, array, domAttr, require2, request);
+				main($, array, domAttr, request);
 			});
 		});
 	}
