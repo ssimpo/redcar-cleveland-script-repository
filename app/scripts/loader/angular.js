@@ -225,13 +225,13 @@
 		var loaders = [];
 		function runNext(){
 			if(loaders.length > 0){
-				var loader = loaders.pop();
+				var loader = loaders.shift();
 				loader();
 			}else{
 				callback();
 			}
 		}
-				
+		
 		dojo.forEach(mids, function(mid){
 			loaders.push(function(){
 				appendScript({
