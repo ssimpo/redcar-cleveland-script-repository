@@ -60,10 +60,10 @@
         var script = document.createElement("script");
         script.type = "text/javascript";
         script.src = constr.src;
-		if(isProperty(constr, "async")){
-			if(constr.async){
-				script.async = true;
-			}
+		constr.async = ((isProperty(constr, "async")) ? constr.async : false);
+		
+		if(constr.async){
+			script.async = true;
 		}
         if (isProperty(constr, "id")) {
 			script.id = constr.id;
@@ -124,7 +124,7 @@
         //      Code largely taken from dojo._base.sniff.
         // returns: integer
         //      Version number
-            
+        
         if (bowserSniffed) { return isIE; }
         var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
         if (!webkit) {
@@ -221,7 +221,35 @@
 		loadApps();
 	};
 	
-	if(isProperty(window, "require")){
+	var require2 = function(mids, callback){
+		var loaders = [];
+		function runNext(){
+			if(loaders.length > 0){
+				var loader = loaders.pop();
+				loader();
+			}else{
+				callback();
+			}
+		}
+				
+		dojo.forEach(mids, function(mid){
+			loaders.push(function(){
+				appendScript({
+					"onload": runNext,
+					"src": location.protocol+"//"+location.host+mid,
+					"node": dojo.query("head")[0]
+				});
+			});
+		});
+				
+		runNext();
+	};
+	
+	if(isProperty(window, "dojo")){
+		dojo.ready(function(){
+			main(dojo.query, dojo, undefined, require2, undefined);
+		});
+	}else{
 		require([
 			"dojo/ready",
 			"dojo/query",
@@ -230,29 +258,8 @@
 			"dojo/request"
 		], function(ready, $, array, domAttr, request){
 			ready(function(){
-				main($, array, domAttr, require, request);
+				main($, array, domAttr, require2, request);
 			});
-		});
-	}else{
-		dojo.ready(function(){
-			var require = function(mids, callback){
-				var done = 0;
-				dojo.forEach(mids, function(mid){
-					appendScript({
-						"onload": function(){
-							done++;
-							if (done >= mids.length) {
-								callback();
-							}
-						},
-						"src": location.protocol+"//"+location.host+mid,
-						"node": dojo.query("head")[0]
-					});
-				});
-				
-			};
-			
-			main(dojo.query, dojo, undefined, require, undefined);
 		});
 	}
 })();
