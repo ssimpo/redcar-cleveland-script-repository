@@ -135,9 +135,9 @@
 	function placeNode(node, refnode, position) {
 		// summary:
 		//		Place a node in the Dom with reference to another node.
-		// node: Object|XMLDOMNode
+		// node: Object XMLDOMNode
 		//		The node to place.
-		// refNode: Object|XMLDOMNode
+		// refNode: Object XMLDOMNode
 		//		The reference node.
 		// position: String|undefined
 		//		Where to place node in relation to refNode.  Four options:
@@ -170,7 +170,7 @@
 		// todo:
 		//		Stop using node.onload and use one of the append versions to
 		//		stop overwriting of other context code.
-		// node: Object | XMLDOMNode
+		// node: Object XMLDOMNode
 		//		The node to add an onLoad function to.
 		// onload: Function
 		//		The onload function to apply.
@@ -313,7 +313,7 @@
 	function loadProfile(appDom, callback){
 		// summary:
 		//		Load a profile and then fire the callback passing the profile.
-		// appDom: Object|XMLDOMNode
+		// appDom: Object XMLDOMNode
 		//		The dom node representing the app for which a profile is needed.
 		// callback: Function
 		//		The callback to fire when the profile is loaded.
@@ -415,8 +415,8 @@
 		// summary:
 		//		Polyfill for $ function using native querySelector.
 		// selector: String
-		//		The selection critreae
-		// context: Object XMLDOMNode|Undfined
+		//		The selection criteria
+		// context: Object XMLDOMNode|Undefined
 		//		The optional context for the query, defaults to document.
 		// returns: Array
 		//		The found XMLNodes.
