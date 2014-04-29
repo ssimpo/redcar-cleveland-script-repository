@@ -261,9 +261,6 @@
 	function findAngularApps(context) {
 		// summary:
 		//		Find the angular apps on the current page.
-		// todo:
-		//		Add optional Dom/Node context.
-		//		Does it work with native querySelector?
 		// returns: Array
 		//		The nodes found by the querySelector.
 		
@@ -433,9 +430,6 @@
 		//		Look for a querySelector to use in this module.  Will fallback
 		//		to the native one (if available) but will try to use a Dojo one
 		//		first and then jQuery (if RequireJs is available).
-		// todo:
-		//		Add handling for no native querySelector
-		//		Load jQuery directly instead of via requireJs.
 		// callback: Function
 		//		Callback to fire when querySelector is available.  Supplies
 		//		the actual selector as the callback argument.
