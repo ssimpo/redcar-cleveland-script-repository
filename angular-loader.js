@@ -9,7 +9,6 @@
 	//		on any one page.
 	// todo:
 	//		Create Unit Tests
-	//		Fix parsing of JSON "unexpected end of input".
 	
 	var module = this;
 	var apps = [];
@@ -615,10 +614,10 @@
 		}
 		
 		on("readystatechange", function(e, detach){
-			if(request.readyState === 4){
+			if(request.readyState !== 4){
 				return;
 			}
-			if((request.status != 200) && (request.status != 304)){
+			if((request.status !== 200) && (request.status !== 304)){
 				errCallback(request);
 			}
 			detach();
