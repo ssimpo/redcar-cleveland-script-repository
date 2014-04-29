@@ -18,6 +18,7 @@
 	var bowserSniffed = false;
 	var isIE = false;
 	var apps = [];
+	var $;
 	
 	function isProperty(obj, key){
 		// summary:
@@ -246,14 +247,12 @@
 		runNext();
 	};
 	
-	function findAngularApps($) {
+	function findAngularApps() {
 		// summary:
 		//		Find the angular apps on the current page.
 		// todo:
 		//		Add optional Dom/Node context.
 		//		Does it work with native querySelector?
-		// $: Function
-		//		The querySelector to use.
 		// returns: Array
 		//		The nodes found by the querySelector.
 		
@@ -361,13 +360,11 @@
 		}
 	}
 	
-	function loadApps($){
+	function loadApps(){
 		// summary:
 		//		Load up all the Angular applications on the current page.
-		// $: Function
-		//		The querySelector to use.
 		
-		var apps = findAngularApps($);
+		var apps = findAngularApps();
 		if(apps.length > 0){
 			for(var i = 0; i < apps.length; i++){
 				loadProfile(apps[i], function(profile){
@@ -429,19 +426,17 @@
 		}
 	}
 	
-	if(isProperty(window, "dojo")){
-		getQuerySelector(function($){
+	
+	getQuerySelector(function(selector){
+		$ = selector;
+		if(isProperty(window, "dojo")){
 			dojo.ready(function(){
 				loadApps($);
 			});
-		});
-	}else{
-		require([
-			"dojo/ready",
-		], function(ready){
+		}else{
 			ready(function(){
 				loadApps($);
 			});
-		});
-	}
+		}
+	});
 })(window);
