@@ -297,10 +297,10 @@
 	function calculateLibraryPath(id, useMin){
 		// summary:
 		//		Calculate the path to a given library.
-		// todo:
-		//		Add option not to use the min version.
 		// id: String
 		//		The name of the library.
+		// useMin: Boolean | Undefined
+		//		Use the minified version of the library (dafulats to true).
 		// returns: String
 		//		The path to the library.
 		
