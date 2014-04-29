@@ -227,9 +227,10 @@
         context = ((context === undefined) ? this : context);
             
         var boundOnload = bind(context, onload);
-        var func = function(){
+        var func = function(e, detach){
             if(!done && (!node.readyState || node.readyState === "loaded" || node.readyState === "complete")){
                 done = true;
+				detach();
                 boundOnload();
             }
         };
@@ -240,6 +241,9 @@
 	function on(eventName, func, subject, context){
 		// summary:
 		//		Cross-browser event attaching function.
+		// todo:
+		//		Detach is not robust when not using detachEvent
+		//		or removeEventListener.
 		// eventName: String
 		//		Name of event to attach to.
 		// func: Function
@@ -250,6 +254,7 @@
 		//		Context to attach the event function to (defaults to
 		//		browser default).
 		
+		var returner = {};
 		func = ((context !== undefined) ? bind(context, func) : func);
 		onEventName = "on" + eventName;
 		attachFunc = function(){
@@ -257,20 +262,39 @@
 		};
 		
 		if(subject.attachEvent){
-			subject.attachEvent(onEventName, attachFunc);
+			returner.detach = function(){
+				subject.detachEvent(onEventName, func);
+			};
+			subject.attachEvent(onEventName, function(e){
+				attachFunc(e, returner.detach);
+			});
 		}else if(subject.addEventListener){
-			subject.addEventListener(eventName, func, false);          
+			returner.detach = function(){
+				subject.removeEventListener(eventName, func);
+			};
+			subject.addEventListener(eventName, function(e){
+				func(e, returner.detach);
+			}, false);
 		}else{
 			var oldFunc = subject[onEventName];
+			returner.detach = function(){
+				subject[onEventName] = oldFunc;
+			};
+			
 			if(typeof oldFunc !== "function"){
-				subject[onEventName] = attachFunc;
+				subject[onEventName] = function(e){
+					attachFunc(e, returner.detach);
+				}
 			}else{
 				subject[onEventName] = function(){
-					old_event();
-					func.call(subject);
+					oldFunc();
+					attachFunc(e, returner.detach);
 				};
 			}
+			
 		}
+		
+		return returner;
 	}
 	
 	function getHeadNode(){
@@ -575,13 +599,14 @@
 			request.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		}
 		
-		on("readystatechange", function(){
+		on("readystatechange", function(e, detach){
 			if(request.readyState === 4){
 				return;
 			}
 			if((request.status != 200) && (request.status != 304)){
 				errCallback(request);
 			}
+			detach();
 			callback(request.responseText);
 		}, request);
 		
@@ -652,26 +677,17 @@
 		var top = true;
 		var doc = win.document;
 		var root = doc.documentElement;
-		var rem = ((doc.addEventListener) ? "removeEventListener" : "detachEvent");
-		var pre = ((doc.addEventListener) ? "" : "on");
 		
-		var init = function(e){
+		var init = function(e, detach){
 			if (e.type === "readystatechange" && doc.readyState !== "complete"){
 				return;
 			}
-			
-			(e.type === "load" ? win : doc)[rem](pre + e.type, init, false);
-			if (!done && (done = true)) callback.call(win, e.type || e);
-		};
-		
-		var poll = function() {
-			try{
-				root.doScroll("left");
-			}catch(e){
-				setTimeout(poll, 50);
-				return;
+			if(detach !== undefined) {
+				detach();
 			}
-			init("poll");
+			if (!done && (done = true)){
+				callback.call(win, e.type || e);
+			}
 		};
 		
 		if(doc.readyState === "complete"){
@@ -682,7 +698,7 @@
 					top = !win.frameElement;
 				}catch(e){ }
 				if(top){
-					poll();
+					contentLoadedPoll(root, init);
 				}
 			}
 			
@@ -690,6 +706,22 @@
 			on("readystatechange", init, doc);
 			on("load", init, win);
 		}
+	}
+	
+	function contentLoadedPoll(root, init){
+		// summary:
+		//		Content polling to see if it has completed loading.
+		// root: Object XMLDOMNode
+		//		The root of the document
+		// init: Function
+		
+		try{
+			root.doScroll("left");
+		}catch(e){
+			setTimeout(poll, 50);
+			return;
+		}
+		init("poll");
 	}
 	
 	function load(){
