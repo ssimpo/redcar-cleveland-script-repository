@@ -1,4 +1,6 @@
 (function(global){
+	"use strict";
+	
 	// author:
 	//		Stephen Simpson <me@simpo.org>.
 	// summary:
@@ -16,10 +18,10 @@
 	var $;
 	var angularAppId = "rcbc-app";
 	var XMLHttpFactories = [
-		function(){return new XMLHttpRequest()},
-		function(){return new ActiveXObject("Msxml2.XMLHTTP")},
-		function(){return new ActiveXObject("Msxml3.XMLHTTP")},
-		function(){return new ActiveXObject("Microsoft.XMLHTTP")}
+		function(){return new XMLHttpRequest();},
+		function(){return new ActiveXObject("Msxml2.XMLHTTP");},
+		function(){return new ActiveXObject("Msxml3.XMLHTTP");},
+		function(){return new ActiveXObject("Microsoft.XMLHTTP");}
 	];
 	var loadedScripts = {};
 	
@@ -86,7 +88,7 @@
 				}
 			}
         
-			hasTestsCached["ie"]  = (((isIE == undefined) || (isIE == 0)) ? false : isIE);
+			hasTestsCached["ie"]  = (((isIE === undefined) || (isIE === 0)) ? false : isIE);
         
 			return hasTestsCached["ie"];
 		}
@@ -109,7 +111,7 @@
 			return hasTests[test]();
 		}
 		
-		throw "Test: " + test + " not found."
+		throw "Test: " + test + " not found.";
 	}
 	
 	function isProperty(obj, key){
@@ -190,7 +192,6 @@
         
 		if(!isProperty(loadedScripts, constr.src)){
 			loadedScripts[constr.src] = true;
-			var done = false;
 			var context = ((isProperty(constr, "context")) ? constr.context : this);
 			var position = ((position === undefined) ? "last" : position);
 			constr.node = ((isProperty(constr, "node")) ? constr.node : getHeadNode());
@@ -296,7 +297,7 @@
 			if(typeof oldFunc !== "function"){
 				subject[onEventName] = function(e){
 					attachFunc(e, returner.detach);
-				}
+				};
 			}else{
 				subject[onEventName] = function(){
 					oldFunc();
@@ -337,12 +338,16 @@
         switch(position.toLowerCase()){
 			case "first":
                 refnode.parentNode.insertBefore(node, refnode.parentNode.firstChild);
+				break;
             case "last":
                 refnode.appendChild(node);
+				break;
             case "before":
                 refnode.parentNode.insertBefore(node, refnode);
+				break;
             case "after":
                 refnode.parentNode.insertBefore(node, refnode.nextSibling);
+				break;
         }
     }
 	
@@ -437,10 +442,12 @@
 		var appName = getNodeAttribute(appDom, angularAppId);
 		var appProfileUrl = getProfileUrl(appName);
 		ajaxGet(appProfileUrl, function(data){
-			for (var i = 0; i < data.scripts.length; i++) {
+			var i;
+			
+			for (i = 0; i < data.scripts.length; i++) {
 				data.scripts[i] = addAppPathToUrl(data.scripts[i], appName);
 			}
-			for (var i = (data.libraries.length-1); i >= 0; i--) {
+			for (i = (data.libraries.length-1); i >= 0; i--) {
 				var id = data.libraries[i];
 				data.scripts.unshift(calculateLibraryPath(id));
 			}
@@ -492,20 +499,20 @@
 		}
 		
 		runNext();
-	};
+	}
 	
 	function loadApps(){
 		// summary:
 		//		Load up all the Angular applications on the current page.
 		
 		var apps = findAngularApps();
+		var loader = function(profile){
+			executeProfile(profile.scripts, function(){});
+		};
+		
 		if(apps.length > 0){
 			for(var i = 0; i < apps.length; i++){
-				loadProfile(apps[i], function(profile){
-					executeProfile(profile.scripts, function(){
-							console.log("DONE");
-					});
-				});
+				loadProfile(apps[i], loader);
 			}
 		}
 	}
