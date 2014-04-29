@@ -8,11 +8,10 @@
 	//		an app profile for each.  Will bootstrap multiple apps
 	//		on any one page.
 	// todo:
-	//		Use ng-app instead of rcbc-app.
 	//		Create Unit Tests
-	//		Add JSON parser poly-fill
 	//		Fix parsing of JSON "unexpected end of input".
 	
+	var module = this;
 	var apps = [];
 	var hasTestsCached = {};
 	var $;
@@ -48,6 +47,14 @@
 			
 			hasTestsCached["dojo15"] = isProperty(global, "dojo");
 			return hasTestsCached["dojo15"];
+		},
+		"jsonParser": function(){
+			// summary:
+			//		Is native JSON Parser available.
+			// returns: Boolean
+			
+			hasTestsCached["jsonParser"] = isProperty(global, "JSON");
+			return hasTestsCached["jsonParser"];
 		},
 		"querySelectorAll": function(){
 			// summary:
@@ -724,16 +731,29 @@
 		init("poll");
 	}
 	
+	function loadJsonParser(callback){
+		if (has("jsonParser")){
+			callback();
+		}
+		
+		appendScript({
+			"src": calculateLibraryPath("json3"),
+			"onload": function(){
+				JSON3.runInContext(module);
+				callback();
+			}
+		});
+	}
+	
 	function load(){
 		// summary:
 		//		Main module function.
 		
-		hasTestsCached.dojo18 = false;
-		hasTestsCached.dojo15 = false;
-		
-		getQuerySelector(function(selector){
-			$ = selector;
-			ready(global.window, loadApps);
+		loadJsonParser(function(){
+			getQuerySelector(function(selector){
+				$ = selector;
+				ready(global.window, loadApps);
+			});
 		});
 	}
 	
