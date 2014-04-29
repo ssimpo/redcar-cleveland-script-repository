@@ -160,6 +160,42 @@
         }
     }
 	
+	function on(eventName, func, subject, context){
+		// summary:
+		//		Cross-browser event attaching function.
+		// eventName: String
+		//		Name of event to attach to.
+		// func: Function
+		//		Event function to call on the event.
+		// subject: Object XMLDOMNode | Mixed
+		//		The node or object to attach the event to.
+		// context: Object | Undefined
+		//		Context to attach the event function to (defaults to
+		//		browser default).
+		
+		func = ((context !== undefined) ? bind(context, func) : func);
+		onEventName = "on" + eventName;
+		attachFunc = function(){
+			func.call(subject);
+		};
+		
+		if(subject.attachEvent){
+			subject.attachEvent(onEventName, attachFunc);
+		}else if(subject.addEventListener){
+			subject.addEventListener(eventName, func, false);          
+		}else{
+			var oldFunc = subject[onEventName];
+			if(typeof oldFunc !== "function"){
+				subject[onEventName] = attachFunc;
+			}else{
+				subject[onEventName] = function(){
+					old_event();
+					func.call(subject);
+				};
+			}
+		}
+	}
+	
 	function addOnloadFunction(node, onload, context){
 		// summary:
 		//		Add an onLoad function to a node with a specified
@@ -167,9 +203,6 @@
 		// description:
 		//		Add an onLoad function to a node with a specified context. This
 		//		is a cross-browser solution that should work in IE8.
-		// todo:
-		//		Stop using node.onload and use one of the append versions to
-		//		stop overwriting of other context code.
 		// node: Object XMLDOMNode
 		//		The node to add an onLoad function to.
 		// onload: Function
@@ -188,11 +221,7 @@
             }
         };
             
-        if(ieVersion()){
-            node.onreadystatechange = bind(context, func);
-        }else{
-            node.onload = bind(context, func);
-        }
+		on((ieVersion() ? "readystatechange" : "load"), func, node, context);
     }
 	
 	function ieVersion() {
