@@ -8,7 +8,6 @@
 	//		an app profile for each.  Will bootstrap multiple apps
 	//		on any one page.
 	// todo:
-	//		Remove any remaining Dojo dependencies.
 	//		Use ng-app instead of rcbc-app.
 	//		Create Unit Tests
 	
@@ -69,7 +68,7 @@
 		return global.document.getElementsByTagName("head")[0];
 	}
 	
-	function appendScript(constr) {
+	function appendScript(constr){
         // summary:
         //      Insert a script into the DOM at a given point.
         // description:
@@ -99,7 +98,7 @@
         //          Defaults to last.
         // returns: XMLNode
         //      The script node being used as a loader.
-            
+        
         var done = false;
         var context = ((isProperty(constr, "context")) ? constr.context : this);
         var position = ((position === undefined) ? "last" : position);
@@ -234,21 +233,25 @@
 				var loader = loaders.shift();
 				loader();
 			}else{
-				dojo.forEach(apps, function(app){
-					angular.bootstrap(app.appNode, [app.appName]);
-				});
+				for(var i = 0; i < apps.length; i++){
+					angular.bootstrap(apps[i].appNode, [apps[i].appName]);
+				}
 				callback();
 			}
 		}
 		
-		dojo.forEach(mids, function(mid){
-			loaders.push(function(){
+		function loader(i){
+			return function(){
 				appendScript({
 					"onload": runNext,
-					"src": location.protocol+"//"+location.host+mid
+					"src": location.protocol+"//"+location.host+mids[i]
 				});
-			});
-		});
+			};
+		}
+		
+		for(var i = 0; i < mids.length; i++){
+			loaders.push(loader(i));
+		}
 		
 		runNext();
 	};
@@ -295,7 +298,7 @@
 		// id: String
 		//		The name of the library.
 		// useMin: Boolean | Undefined
-		//		Use the minified version of the library (dafulats to true).
+		//		Use the minified version of the library (defaults to true).
 		// returns: String
 		//		The path to the library.
 		
@@ -322,6 +325,7 @@
 				var id = data.libraries[i];
 				data.scripts.unshift(calculateLibraryPath(id));
 			}
+			
 			apps.push({
 				"appName": appName,
 				"appNode": appDom
@@ -332,14 +336,14 @@
 		});
 	}
 	
-	function ajaxGet(url, callback, errCallback){
+	function ajaxGet(src, callback, errCallback){
 		// summary:
 		//		Get a url, process as json and optionally fire callback or
 		//		errCallback (on failure).
 		// description:
 		//		Use either dojo 1.8+ or 1.5 ajax code to load a json resource
 		//		and optionally fire callback or errCallback (on failure).
-		// url: String
+		// src: String
 		//		The resource url to load.
 		// callback: Function
 		//		The optional callback to fire when the resource is loaded.
@@ -353,18 +357,17 @@
 		
 		var opts = {"handleAs": "json"};
 		if(has("dojo15")){
-			console.log(2);
 			opts.load = callback;
 			opts.error = errCallback;
-			opts.url = url;
+			opts.url = src;
 			dojo.xhrGet(opts);
 		}else if(has("dojo18")){
 			opts.method = "get";
 			require(["dojo/query"], function(request){
-				request(url, opts).then(callback, errCallback);
+				request(src, opts).then(callback, errCallback);
 			});
 		}else{
-			sendRequest(url, function(data){
+			sendRequest(src, function(data){
 				callback(JSON.parse(data));
 			}, errCallback);
 		}
@@ -463,7 +466,7 @@
 		// win: Object Window
 		//		The window to poll.
 		// callback: Function
-		//		The callback when loadin is complete.
+		//		The callback when loading is complete.
 		
 		var done = false;
 		var top = true;
@@ -571,7 +574,7 @@
 	function has(test){
 		// summary:
 		//		Perform a test, either using the cache of the previous test or
-		//		peforming a new test.
+		//		performing a new test.
 		// test: String
 		//		Test to perform.
 		// returns: Mixed
@@ -588,7 +591,7 @@
 		throw "Test: " + test + " not found."
 	}
 	
-	function sendRequest(url, callback, errCallback, postData){
+	function sendRequest(src, callback, errCallback, postData){
 		// summary:
 		//		Native Ajax sending and handling function.
 		// source:
@@ -609,7 +612,7 @@
 		}
 		
 		var method = ((postData !== undefined) ? "POST" : "GET");
-		request.open(method,url,true);
+		request.open(method, src ,true);
 		if(postData !== undefined){
 			request.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		}
