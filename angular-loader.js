@@ -8,7 +8,6 @@
 	//		an app profile for each.  Will bootstrap muliple apps
 	//		on any one page.
 	// todo:
-	//		Make the querySelector global to the module context.
 	//		Remove any remaining Dojo dependancies.
 	//		Create a ajax handling function that is cross-browser
 	//			and independant of framework.
@@ -46,6 +45,10 @@
 		//		The function to bind.
 		// returns: Function
 		//		The newly created vound function.
+		
+		if(isProperty(Function.prototype, "bind")){
+			return func.bind(context);
+		}
 		
 		var slice = [].slice;
 		var args = slice.call(arguments, 2);
