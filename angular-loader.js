@@ -294,7 +294,7 @@
 		return "/apps/" + appName + "/app/" + url;
 	}
 		
-	function calculateLibraryPath(id){
+	function calculateLibraryPath(id, useMin){
 		// summary:
 		//		Calculate the path to a given library.
 		// todo:
@@ -304,7 +304,9 @@
 		// returns: String
 		//		The path to the library.
 		
-		return "/apps/lib/lib/" + id + "/" + id + ".min.js";
+		useMin = ((useMin === undefined) ? true : useMin);
+		
+		return "/apps/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
 	}
 	
 	function loadProfile(appDom, callback){
