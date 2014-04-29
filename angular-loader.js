@@ -22,6 +22,7 @@
 		function(){return new ActiveXObject("Msxml3.XMLHTTP")},
 		function(){return new ActiveXObject("Microsoft.XMLHTTP")}
 	];
+	var loadedScripts = {};
 	
 	var hasTests = {
 		"requireJs": function(){
@@ -188,32 +189,37 @@
         // returns: XMLNode
         //      The script node being used as a loader.
         
-        var done = false;
-        var context = ((isProperty(constr, "context")) ? constr.context : this);
-        var position = ((position === undefined) ? "last" : position);
-		constr.node = ((isProperty(constr, "node")) ? constr.node : getHeadNode());
+		if(!isProperty(loadedScripts, constr.src)){
+			loadedScripts[constr.src] = true;
+			var done = false;
+			var context = ((isProperty(constr, "context")) ? constr.context : this);
+			var position = ((position === undefined) ? "last" : position);
+			constr.node = ((isProperty(constr, "node")) ? constr.node : getHeadNode());
     
-        var script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = constr.src;
-		constr.async = ((isProperty(constr, "async")) ? constr.async : false);
+			var script = document.createElement("script");
+			script.type = "text/javascript";
+			script.src = constr.src;
+			constr.async = ((isProperty(constr, "async")) ? constr.async : false);
 		
-		if(constr.async){
-			script.async = true;
-		}
-        if (isProperty(constr, "id")) {
-			script.id = constr.id;
-		}
-        if (constr.onload){
-            addOnloadFunction(script, constr.onload, context);
-        }
-        if (constr.onerror){
-            script.onerror = bind(context, constr.onerror);
-        }
+			if(constr.async){
+				script.async = true;
+			}
+			if (isProperty(constr, "id")) {
+				script.id = constr.id;
+			}
+			if (constr.onload){
+				addOnloadFunction(script, constr.onload, context);
+			}
+			if (constr.onerror){
+				script.onerror = bind(context, constr.onerror);
+			}
         
-        placeNode(script, constr.node, position);
+			placeNode(script, constr.node, position);
 		
-        return script;
+			return script;
+		}
+		
+		return null;
     }
 	
 	function addOnloadFunction(node, onload, context){
@@ -465,7 +471,9 @@
 				loader();
 			}else{
 				for(var i = 0; i < apps.length; i++){
-					angular.bootstrap(apps[i].appNode, [apps[i].appName]);
+					try{
+						angular.bootstrap(apps[i].appNode, [apps[i].appName]);
+					}catch(e){ }
 				}
 				callback();
 			}
@@ -738,17 +746,17 @@
 		// callback: Function
 		//		Callback to fire when the parser is loaded.
 		
-		if (has("jsonParser")){
+		if(has("jsonParser")){
 			callback();
+		}else{
+			appendScript({
+				"src": calculateLibraryPath("json3"),
+				"onload": function(){
+					JSON3.runInContext(module);
+					callback();
+				}
+			});
 		}
-		
-		appendScript({
-			"src": calculateLibraryPath("json3"),
-			"onload": function(){
-				JSON3.runInContext(module);
-				callback();
-			}
-		});
 	}
 	
 	function load(){
