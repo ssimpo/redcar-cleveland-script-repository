@@ -10,6 +10,8 @@
 	// todo:
 	//		Use ng-app instead of rcbc-app.
 	//		Create Unit Tests
+	//		Add JSON parser poly-fill
+	//		Fix parsing of JSON "unexpected end of input".
 	
 	var apps = [];
 	var hasTestsCached = {};
@@ -650,12 +652,14 @@
 		var top = true;
 		var doc = win.document;
 		var root = doc.documentElement;
-		var add = ((doc.addEventListener) ? "addEventListener" : "attachEvent");
 		var rem = ((doc.addEventListener) ? "removeEventListener" : "detachEvent");
 		var pre = ((doc.addEventListener) ? "" : "on");
 		
-		var init = function(e) {
-			if (e.type === "readystatechange" && doc.readyState !== "complete") return;
+		var init = function(e){
+			if (e.type === "readystatechange" && doc.readyState !== "complete"){
+				return;
+			}
+			
 			(e.type === "load" ? win : doc)[rem](pre + e.type, init, false);
 			if (!done && (done = true)) callback.call(win, e.type || e);
 		};
@@ -681,15 +685,19 @@
 					poll();
 				}
 			}
-			doc[add](pre + "DOMContentLoaded", init, false);
-			doc[add](pre + "readystatechange", init, false);
-			win[add](pre + "load", init, false);
+			
+			on("DOMContentLoaded", init, doc);
+			on("readystatechange", init, doc);
+			on("load", init, win);
 		}
 	}
 	
 	function load(){
 		// summary:
 		//		Main module function.
+		
+		hasTestsCached.dojo18 = false;
+		hasTestsCached.dojo15 = false;
 		
 		getQuerySelector(function(selector){
 			$ = selector;
