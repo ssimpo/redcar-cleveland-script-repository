@@ -278,8 +278,7 @@
 			loaders.push(function(){
 				appendScript({
 					"onload": runNext,
-					"src": location.protocol+"//"+location.host+mid,
-					"node": dojo.query("head")[0]
+					"src": location.protocol+"//"+location.host+mid
 				});
 			});
 		});
