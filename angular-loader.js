@@ -64,6 +64,15 @@
 		return bound;
 	}
 	
+	function getHeadNode(){
+		// summary:
+		//		Get the dom head element.
+		// returns: XMLDOMNode
+		//		The head node.
+		
+		return global.document.getElementsByTagName("head")[0];
+	}
+	
 	function appendScript(constr) {
         // summary:
         //      Insert a script into the DOM at a given point.
@@ -75,7 +84,7 @@
         //      Parameters object with properties:
         //      node: object XMLNode
         //          The reference node for insertion (eg. insert within
-        //          this node or insert after this).
+        //          this node or insert after this). Defaults to the head.
         //      src: string
         //          The URL to load the script from
         //      onload: function
@@ -98,6 +107,7 @@
         var done = false;
         var context = ((isProperty(constr, "context")) ? constr.context : this);
         var position = ((position === undefined) ? "last" : position);
+		constr.node = ((isProperty(constr, "node")) ? constr.node : getHeadNode());
     
         var script = document.createElement("script");
         script.type = "text/javascript";
@@ -248,7 +258,7 @@
 		runNext();
 	};
 	
-	function findAngularApps() {
+	function findAngularApps(context) {
 		// summary:
 		//		Find the angular apps on the current page.
 		// todo:
@@ -257,7 +267,9 @@
 		// returns: Array
 		//		The nodes found by the querySelector.
 		
-		return $("[rcbc-app]");
+		context = ((context === undefined) ? global.document : context);
+		
+		return $("[rcbc-app]", context);
 	}
 	
 	function getProfileUrl(appName){
@@ -399,6 +411,21 @@
         return result;
 	}
 	
+	function querySelector(selector, context){
+		// summary:
+		//		Polyfill for $ function using native querySelector.
+		// selector: String
+		//		The selection critreae
+		// context: Object XMLDOMNode|Undfined
+		//		The optional context for the query, defaults to document.
+		// returns: Array
+		//		The found XMLNodes.
+		
+		context = ((context === undefined) ? global.document : context);
+		
+		return context.querySelectorAll(selector);
+	}
+	
 	function getQuerySelector(callback){
 		// summary:
 		//		Get a querySelector to use in this module.
@@ -422,8 +449,15 @@
 		}else if((typeof global.define === "function") && (typeof global.require === "function")){
 			define.amd = true;
 			require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
-		}else if(isProperty(document, "querySelector")){
-			callback(document.querySelector);
+		}else if(isProperty(global.document, "querySelectorAll")){
+			callback(querySelector);
+		}else{
+			appendScript({
+				"src": "/apps/lib/lib/jquery/jquery.min.js",
+				"onload": function(){
+					callback(global.$);
+				}
+			});
 		}
 	}
 	
