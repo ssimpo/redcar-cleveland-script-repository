@@ -9,8 +9,6 @@
 	//		on any one page.
 	// todo:
 	//		Remove any remaining Dojo dependencies.
-	//		Create a ajax handling function that is cross-browser
-	//			and independent of framework.
 	//		Use ng-app instead of rcbc-app.
 	//		Create Unit Tests
 	
@@ -341,8 +339,6 @@
 		// description:
 		//		Use either dojo 1.8+ or 1.5 ajax code to load a json resource
 		//		and optionally fire callback or errCallback (on failure).
-		// todo:
-		//		Make it work without Dojo.
 		// url: String
 		//		The resource url to load.
 		// callback: Function
@@ -354,18 +350,23 @@
 		
 		callback = callback || function(){};
 		errCallback = errCallback || function(){};
-			
+		
 		var opts = {"handleAs": "json"};
-		if(isProperty(global, "dojo")){
+		if(has("dojo15")){
+			console.log(2);
 			opts.load = callback;
 			opts.error = errCallback;
 			opts.url = url;
 			dojo.xhrGet(opts);
-		}else if(isProperty(global, "dojoConfig")){
+		}else if(has("dojo18")){
 			opts.method = "get";
 			require(["dojo/query"], function(request){
 				request(url, opts).then(callback, errCallback);
 			});
+		}else{
+			sendRequest(url, function(data){
+				callback(JSON.parse(data));
+			}, errCallback);
 		}
 	}
 	
@@ -438,7 +439,7 @@
 		}else if(has("dojo18")){
 			require(["dojo/query"], callback);
 		}else if(typeof global.$ === "function"){
-			callback($);
+			callback(global.$);
 		}else if(has("requireJs")){
 			define.amd = true;
 			require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
@@ -587,22 +588,89 @@
 		throw "Test: " + test + " not found."
 	}
 	
+	function sendRequest(url, callback, errCallback, postData){
+		// summary:
+		//		Native Ajax sending and handling function.
+		// source:
+		//		http://www.quirksmode.org/js/xmlhttp.html
+		// src: String
+		//		Resource path to load.
+		// callback: Function
+		//		The calLback to use on success. passes the loaded text.
+		// errCallback: Function
+		//		Failure callback.  Error passed to the error callback.
+		// postData: String | undefined
+		//		The data to post (if any)
+		
+		errCallback = ((errCallback === undefined) ? function(){} : errCallback);
+		var request = createXMLHTTPObject();
+		if(!request){
+			errCallback();
+		}
+		
+		var method = ((postData !== undefined) ? "POST" : "GET");
+		request.open(method,url,true);
+		if(postData !== undefined){
+			request.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+		}
+		
+		on("readystatechange", function(){
+			if(request.readyState === 4){
+				return;
+			}
+			if((request.status != 200) && (request.status != 304)){
+				errCallback(request);
+			}
+			callback(request.responseText);
+		}, request);
+		
+		if(request.readyState === 4){
+			return;
+		}
+		request.send(postData);
+	}
+
+	var XMLHttpFactories = [
+		function(){return new XMLHttpRequest()},
+		function(){return new ActiveXObject("Msxml2.XMLHTTP")},
+		function(){return new ActiveXObject("Msxml3.XMLHTTP")},
+		function(){return new ActiveXObject("Microsoft.XMLHTTP")}
+	];
+
+	function createXMLHTTPObject(){
+		// summary:
+		//		Create a Ajax loading object (cross-browser);
+		// returns: Object
+		//		The Ajax loading object.
+		
+		var xmlhttp = false;
+		for(var i=0; i< XMLHttpFactories.length; i++){
+			try{
+				xmlhttp = XMLHttpFactories[i]();
+			}catch(e){
+				continue;
+			}
+			break;
+		}
+		return xmlhttp;
+	}
+	
 	getQuerySelector(function(selector){
 		$ = selector;
 		
 		if(has("dojo15")){
 			dojo.ready(function(){
-				loadApps($);
+				loadApps();
 			});
 		}else if(has("dojo18")) {
 			require(["dojo/ready"], function(ready){
 				ready(function(){
-					loadApps($);
+					loadApps();
 				});
 			});
 		}else{
 			contentLoaded(global.window, function(){
-				loadApps($);
+				loadApps();
 			});
 		}
 	});
