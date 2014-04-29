@@ -14,8 +14,6 @@
 	//		Use ng-app instead of rcbc-app.
 	//		Create Unit Tests
 	
-	var bowserSniffed = false;
-	var isIE = false;
 	var apps = [];
 	var $;
 	
@@ -215,42 +213,13 @@
             
         var boundOnload = bind(context, onload);
         var func = function(){
-            if(!done && (!node.readyState || node.readyState=="loaded" || node.readyState=="complete")){
+            if(!done && (!node.readyState || node.readyState === "loaded" || node.readyState === "complete")){
                 done = true;
                 boundOnload();
             }
         };
-            
-		on((ieVersion() ? "readystatechange" : "load"), func, node, context);
-    }
-	
-	function ieVersion() {
-        // summary:
-        //      Get the Internet Explorer version (or false if other browser).
-        // note:
-        //      Code largely taken from dojo._base.sniff.
-        // returns: integer
-        //      Version number
         
-        if(bowserSniffed){
-			return isIE;
-		}
-        var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
-        if(!webkit){
-            if(navigator.userAgent.indexOf("Opera") == -1){
-                if(document.all) {
-                    isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
-                    var mode = document.documentMode;
-                    if(mode && mode != 5 && Math.floor(isIE) != mode){
-                        isIE = mode;
-                    }
-                }
-            }
-        }
-        
-        isIE = (((isIE == undefined) || (isIE == 0)) ? false : isIE);
-        
-		return isIE;
+		on((has("ie") ? "readystatechange" : "load"), func, node, context);
     }
 	
 	function executeProfile(mids, callback){
@@ -464,16 +433,16 @@
 		//		Callback to fire when querySelector is available.  Supplies
 		//		the actual selector as the callback argument.
 		
-		if(isProperty(global, "dojo")){
+		if(has("dojo15")){
 			callback(dojo.query);
-		}else if(isProperty(global, "dojoConfig")){
+		}else if(has("dojo18")){
 			require(["dojo/query"], callback);
 		}else if(typeof global.$ === "function"){
 			callback($);
-		}else if((typeof global.define === "function") && (typeof global.require === "function")){
+		}else if(has("requireJs")){
 			define.amd = true;
 			require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
-		}else if(isProperty(global.document, "querySelectorAll")){
+		}else if(has("querySelectorAll")){
 			callback(querySelector);
 		}else{
 			appendScript({
@@ -485,15 +454,154 @@
 		}
 	}
 	
+	function contentLoaded(win, callback){
+		// summary:
+		//		Detect if the specified window has completely loaded the dom.
+		// source:
+		//		https://github.com/dperini/ContentLoaded/blob/master/src/contentloaded.js
+		// win: Object Window
+		//		The window to poll.
+		// callback: Function
+		//		The callback when loadin is complete.
+		
+		var done = false;
+		var top = true;
+		var doc = win.document;
+		var root = doc.documentElement;
+		var add = ((doc.addEventListener) ? "addEventListener" : "attachEvent");
+		var rem = ((doc.addEventListener) ? "removeEventListener" : "detachEvent");
+		var pre = ((doc.addEventListener) ? "" : "on");
+		
+		var init = function(e) {
+			if (e.type === "readystatechange" && doc.readyState !== "complete") return;
+			(e.type === "load" ? win : doc)[rem](pre + e.type, init, false);
+			if (!done && (done = true)) callback.call(win, e.type || e);
+		};
+		
+		var poll = function() {
+			try{
+				root.doScroll("left");
+			}catch(e){
+				setTimeout(poll, 50);
+				return;
+			}
+			init("poll");
+		};
+		
+		if(doc.readyState === "complete"){
+			callback.call(win, "lazy");
+		}else{
+			if(doc.createEventObject && root.doScroll){
+				try {
+					top = !win.frameElement;
+				}catch(e){ }
+				if(top){
+					poll();
+				}
+			}
+			doc[add](pre + "DOMContentLoaded", init, false);
+			doc[add](pre + "readystatechange", init, false);
+			win[add](pre + "load", init, false);
+		}
+	}
+	
+	var hasTestsCached = {};
+	var hasTests = {
+		"requireJs": function(){
+			// summary:
+			//		Is requireJs loaded and available.
+			// returns: Boolean
+			
+			hasTestsCached["requireJs"] = ((typeof global.define === "function") && (typeof global.require === "function"));
+			return hasTestsCached["requireJs"];
+		},
+		"dojo18": function(){
+			// summary:
+			//		Is Dojo1.8+ available.
+			// returns: Boolean
+			
+			hasTestsCached["dojo18"] = (isProperty(window, "dojoConfig") && hasRequireJs());
+			return hasTestsCached["dojo18"];
+		},
+		"dojo15": function(){
+			// summary:
+			//		Is Dojo1.5 available.
+			// returns: Boolean
+			
+			hasTestsCached["dojo15"] = isProperty(global, "dojo");
+			return hasTestsCached["dojo15"];
+		},
+		"querySelectorAll": function(){
+			// summary:
+			//		Is native dom query selector (all) available
+			// returns: Boolean
+			
+			hasTestsCached["querySelectorAll"] = isProperty(global.document, "querySelectorAll");
+			return hasTestsCached["querySelectorAll"];
+		},
+		"ie": function(){
+			// summary:
+			//      Get the Internet Explorer version (or false if other browser).
+			// note:
+			//      Code largely taken from dojo._base.sniff.
+			// returns: integer
+			//      Version number
+			
+			var isIE;
+			var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
+			if(!webkit){
+				if(navigator.userAgent.indexOf("Opera") == -1){
+					if(document.all) {
+						isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
+						var mode = document.documentMode;
+						if(mode && mode != 5 && Math.floor(isIE) != mode){
+							isIE = mode;
+						}
+					}
+				}
+			}
+        
+			hasTestsCached["ie"]  = (((isIE == undefined) || (isIE == 0)) ? false : isIE);
+        
+			return hasTestsCached["ie"];
+		}
+	};
+	
+	function has(test){
+		// summary:
+		//		Perform a test, either using the cache of the previous test or
+		//		peforming a new test.
+		// test: String
+		//		Test to perform.
+		// returns: Mixed
+		//		Test result
+		// throws:
+		//		If no test found will throw an error.
+		
+		if(isProperty(hasTestsCached, test)){
+			return hasTestsCached[test];
+		}else if(isProperty(hasTests, test)){
+			return hasTests[test]();
+		}
+		
+		throw "Test: " + test + " not found."
+	}
 	
 	getQuerySelector(function(selector){
 		$ = selector;
-		if(isProperty(window, "dojo")){
+		
+		if(has("dojo15")){
 			dojo.ready(function(){
 				loadApps($);
 			});
+		}else if(has("dojo18")) {
+			require(["dojo/ready"], function(ready){
+				ready(function(){
+					loadApps($);
+				});
+			});
 		}else{
-			ready(function(){
+			contentLoaded(global.window, function(){
 				loadApps($);
 			});
 		}
