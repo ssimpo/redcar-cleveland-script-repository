@@ -5,12 +5,12 @@
 	//		Angular loader and bootstrapper.
 	// description:
 	//		Search current document for Angular apps and bootstrap them using
-	//		an app profile for each.  Will bootstrap muliple apps
+	//		an app profile for each.  Will bootstrap multiple apps
 	//		on any one page.
 	// todo:
-	//		Remove any remaining Dojo dependancies.
+	//		Remove any remaining Dojo dependencies.
 	//		Create a ajax handling function that is cross-browser
-	//			and independant of framework.
+	//			and independent of framework.
 	//		Use ng-app instead of rcbc-app.
 	//		Create Unit Tests
 	
@@ -37,14 +37,12 @@
 		// description:
 		//		Bind function to a context.  Use instead of Function.bind(), in
 		//		case it does not exist in current environment.
-		// todo:
-		//		Add override to use native version if available.
 		// context: Object
 		//		The context to bind to.
 		// func: Function
 		//		The function to bind.
 		// returns: Function
-		//		The newly created vound function.
+		//		The newly created bound function.
 		
 		if(isProperty(Function.prototype, "bind")){
 			return func.bind(context);
@@ -161,7 +159,7 @@
 		//		is a cross-browser solution that should work in IE8.
 		// todo:
 		//		Stop using node.onload and use one of the append versions to
-		//		stop overwritting of other context code.
+		//		stop overwriting of other context code.
 		// node: Object | XMLDOMNode
 		//		The node to add an onLoad function to.
 		// onload: Function
@@ -302,7 +300,7 @@
 	
 	function loadProfile(appDom, callback){
 		// summary:
-		//		Load a profile and then fire the callbcak passing the profile.
+		//		Load a profile and then fire the callback passing the profile.
 		// appDom: Object|XMLDOMNode
 		//		The dom node representing the app for which a profile is needed.
 		// callback: Function
@@ -410,9 +408,9 @@
 		//		first and then jQuery (if RequireJs is available).
 		// todo:
 		//		Add handling for no native querySelector
-		//		Load jQuery directly insead of via requireJs.
+		//		Load jQuery directly instead of via requireJs.
 		// callback: Function
-		//		Callback to fire when querySelector is availble.  Supplies
+		//		Callback to fire when querySelector is available.  Supplies
 		//		the actual selector as the callback argument.
 		
 		if(isProperty(global, "dojo")){
