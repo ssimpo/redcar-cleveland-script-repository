@@ -732,6 +732,12 @@
 	}
 	
 	function loadJsonParser(callback){
+		// summary:
+		//		Load a JSON parser if there is non nataive
+		//		to current environment.
+		// callback: Function
+		//		Callback to fire when the parser is loaded.
+		
 		if (has("jsonParser")){
 			callback();
 		}
