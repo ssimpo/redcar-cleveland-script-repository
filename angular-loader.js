@@ -1,22 +1,64 @@
 (function(global){
+	// author:
+	//		Stephen Simpson <me@simpo.org>.
+	// summary:
+	//		Angular loader and bootstrapper.
+	// description:
+	//		Search current document for Angular apps and bootstrap them using
+	//		an app profile for each.  Will bootstrap muliple apps
+	//		on any one page.
+	// todo:
+	//		Make the querySelector global to the module context.
+	//		Remove any remaining Dojo dependancies.
+	//		Create a ajax handling function that is cross-browser
+	//			and independant of framework.
+	//		Use ng-app instead of rcbc-app.
+	//		Create Unit Tests
+	
 	var bowserSniffed = false;
 	var isIE = false;
 	var apps = [];
 	
 	function isProperty(obj, key){
+		// summary:
+		//		Test if a key is a property of an object.
+		// obj: Object
+		//		Object to test for property.
+		// key: String
+		//		Property value to test for.
+		// returns: Boolean
+		
 		return Object.prototype.hasOwnProperty.call(obj, key);
 	}
 	
-	function bind(obj, func) {
-		var slice = [].slice,
-		args = slice.call(arguments, 2),
-		nop = function () {},
-		bound = function () {
-			return func.apply( this instanceof nop ? this : ( obj || {} ),
-				args.concat( slice.call(arguments) ) );
+	function bind(context, func){
+		// summary:
+		//		Bind a function to a particular context.
+		// description:
+		//		Bind function to a context.  Use instead of Function.bind(), in
+		//		case it does not exist in current environment.
+		// todo:
+		//		Add override to use native version if available.
+		// context: Object
+		//		The context to bind to.
+		// func: Function
+		//		The function to bind.
+		// returns: Function
+		//		The newly created vound function.
+		
+		var slice = [].slice;
+		var args = slice.call(arguments, 2);
+		var nop = function () {};
+		var bound = function () {
+			return func.apply(
+				((this instanceof nop) ? this : (context || {})),
+				args.concat(slice.call(arguments))
+			);
 		};
+		
 		nop.prototype = func.prototype;
 		bound.prototype = new nop();
+		
 		return bound;
 	}
 	
@@ -78,39 +120,65 @@
         return script;
     }
 	
-	function placeNode(node,refnode,position) {
-        position = ((position==undefined)?'last':position);
-        switch(position.toLowerCase()) {
-            case 'last':
-                refnode.appendChild(node);
-                break;
-            case 'before':
-                refnode.parentNode.insertBefore(node,refnode);
-                break;
-            case 'first':
+	function placeNode(node, refnode, position) {
+		// summary:
+		//		Place a node in the Dom with reference to another node.
+		// node: Object|XMLDOMNode
+		//		The node to place.
+		// refNode: Object|XMLDOMNode
+		//		The reference node.
+		// position: String|undefined
+		//		Where to place node in relation to refNode.  Four options:
+		//			First: Place node as the first child of refNode.
+		//			Last: Place node as the last child of refNode.
+		//			Before: Place node before refNode in the Dom tree.
+		//			After: Place node after refNode in the Dom tree
+		
+        position = ((position === undefined) ? "last": position);
+		
+        switch(position.toLowerCase()){
+			case "first":
                 refnode.parentNode.insertBefore(node, refnode.parentNode.firstChild);
-                break;
-            case 'after':
+            case "last":
+                refnode.appendChild(node);
+            case "before":
+                refnode.parentNode.insertBefore(node, refnode);
+            case "after":
                 refnode.parentNode.insertBefore(node, refnode.nextSibling);
-                break;
         }
     }
 	
-	function addOnloadFunction(node, onload, context) {
+	function addOnloadFunction(node, onload, context){
+		// summary:
+		//		Add an onLoad function to a node with a specified
+		//		context (optional).
+		// description:
+		//		Add an onLoad function to a node with a specified context. This
+		//		is a cross-browser solution that should work in IE8.
+		// todo:
+		//		Stop using node.onload and use one of the append versions to
+		//		stop overwritting of other context code.
+		// node: Object | XMLDOMNode
+		//		The node to add an onLoad function to.
+		// onload: Function
+		//		The onload function to apply.
+		// context: Object|undefined
+		//		Context to bind the onload function to.
+		
         var done = false;
-        context = ((context==undefined)?this:context);
+        context = ((context === undefined) ? this : context);
             
         var boundOnload = bind(context, onload);
-        var func = function() {
-            if (!done && (!node.readyState || node.readyState=="loaded" || node.readyState=="complete")) {
+        var func = function(){
+            if(!done && (!node.readyState || node.readyState=="loaded" || node.readyState=="complete")){
                 done = true;
                 boundOnload();
             }
         };
             
-        if (ieVersion()) {
+        if(ieVersion()){
             node.onreadystatechange = bind(context, func);
-        } else {
+        }else{
             node.onload = bind(context, func);
         }
     }
@@ -123,10 +191,12 @@
         // returns: integer
         //      Version number
         
-        if (bowserSniffed) { return isIE; }
+        if(bowserSniffed){
+			return isIE;
+		}
         var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
-        if (!webkit) {
-            if (navigator.userAgent.indexOf("Opera") == -1) {
+        if(!webkit){
+            if(navigator.userAgent.indexOf("Opera") == -1){
                 if(document.all) {
                     isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
                     var mode = document.documentMode;
@@ -142,7 +212,14 @@
 		return isIE;
     }
 	
-	var executeProfile = function(mids, callback){
+	function executeProfile(mids, callback){
+		// summary:
+		//		Execute a profile and then call callback when complete.
+		// mids: Array
+		//		Array of scripts to load into the current page.
+		// callback: Function
+		//		Function to callback when done loading scripts.
+		
 		var loaders = [];
 		function runNext(){
 			if(loaders.length > 0){
@@ -170,22 +247,65 @@
 	};
 	
 	function findAngularApps($) {
+		// summary:
+		//		Find the angular apps on the current page.
+		// todo:
+		//		Add optional Dom/Node context.
+		//		Does it work with native querySelector?
+		// $: Function
+		//		The querySelector to use.
+		// returns: Array
+		//		The nodes found by the querySelector.
+		
 		return $("[rcbc-app]");
 	}
 	
 	function getProfileUrl(appName){
+		// summary:
+		//		Get the profile url for a given app name.
+		// appName: String
+		//		Name of app to calculate profile url for.
+		// returns: String
+		//		The profile url.
+		
 		return "/apps/" + appName + "/app/profile.json";
 	}
 		
 	function addAppPathToUrl(url, appName){
+		// summary;
+		//		Add an app path (according to supplied app name) to the
+		//		beginning of a url.
+		// url: String
+		//		The url to add to.
+		// appName: String
+		//		The app name to create paths for.
+		// returns: String
+		//		The calculated full relative path.
+		
 		return "/apps/" + appName + "/app/" + url;
 	}
 		
 	function calculateLibraryPath(id){
+		// summary:
+		//		Calculate the path to a given library.
+		// todo:
+		//		Add option not to use the min version.
+		// id: String
+		//		The name of the library.
+		// returns: String
+		//		The path to the library.
+		
 		return "/apps/lib/lib/" + id + "/" + id + ".min.js";
 	}
 	
-	function loadProfile(appDom, callback) {
+	function loadProfile(appDom, callback){
+		// summary:
+		//		Load a profile and then fire the callbcak passing the profile.
+		// appDom: Object|XMLDOMNode
+		//		The dom node representing the app for which a profile is needed.
+		// callback: Function
+		//		The callback to fire when the profile is loaded.
+		
 		var appName = getNodeAttribute(appDom, "rcbc-app");
 		var appProfileUrl = getProfileUrl(appName);
 		ajaxGet(appProfileUrl, function(data){
@@ -207,6 +327,23 @@
 	}
 	
 	function ajaxGet(url, callback, errCallback){
+		// summary:
+		//		Get a url, process as json and optionally fire callback or
+		//		errCallback (on failure).
+		// description:
+		//		Use either dojo 1.8+ or 1.5 ajax code to load a json resource
+		//		and optionally fire callback or errCallback (on failure).
+		// todo:
+		//		Make it work without Dojo.
+		// url: String
+		//		The resource url to load.
+		// callback: Function
+		//		The optional callback to fire when the resource is loaded.
+		//		Resource is passed to the callback.
+		// errCallback: Function
+		//		The optional error callback to call on resource failure. The
+		//		error object is passed to the callback.
+		
 		callback = callback || function(){};
 		errCallback = errCallback || function(){};
 			
@@ -224,10 +361,15 @@
 		}
 	}
 	
-	function loadApps($) {
+	function loadApps($){
+		// summary:
+		//		Load up all the Angular applications on the current page.
+		// $: Function
+		//		The querySelector to use.
+		
 		var apps = findAngularApps($);
 		if(apps.length > 0){
-			for (var i = 0; i < apps.length; i++) {
+			for(var i = 0; i < apps.length; i++){
 				loadProfile(apps[i], function(profile){
 					executeProfile(profile.scripts, function(){
 							console.log("DONE");
@@ -259,7 +401,20 @@
         return result;
 	}
 	
-	function getQuerySelector(callback) {
+	function getQuerySelector(callback){
+		// summary:
+		//		Get a querySelector to use in this module.
+		// description:
+		//		Look for a querySelector to use in this module.  Will fallback
+		//		to the native one (if available) but will try to use a Dojo one
+		//		first and then jQuery (if RequireJs is available).
+		// todo:
+		//		Add handling for no native querySelector
+		//		Load jQuery directly insead of via requireJs.
+		// callback: Function
+		//		Callback to fire when querySelector is availble.  Supplies
+		//		the actual selector as the callback argument.
+		
 		if(isProperty(global, "dojo")){
 			callback(dojo.query);
 		}else if(isProperty(global, "dojoConfig")){
