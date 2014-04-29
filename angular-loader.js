@@ -7,20 +7,17 @@
 		return Object.prototype.hasOwnProperty.call(obj, key);
 	}
 	
-	if (!isProperty(Function, "bind")){
-		Function.prototype.bind = function( obj ) {
-			var slice = [].slice,
-			args = slice.call(arguments, 1),
-			self = this,
-			nop = function () {},
-			bound = function () {
-				return self.apply( this instanceof nop ? this : ( obj || {} ),
-					args.concat( slice.call(arguments) ) );
-			};
-			nop.prototype = self.prototype;
-			bound.prototype = new nop();
-			return bound;
+	function bind(obj, func) {
+		var slice = [].slice,
+		args = slice.call(arguments, 2),
+		nop = function () {},
+		bound = function () {
+			return func.apply( this instanceof nop ? this : ( obj || {} ),
+				args.concat( slice.call(arguments) ) );
 		};
+		nop.prototype = func.prototype;
+		bound.prototype = new nop();
+		return bound;
 	}
 	
 	function appendScript(constr) {
@@ -73,7 +70,7 @@
             addOnloadFunction(script, constr.onload, context);
         }
         if (constr.onerror){
-            script.onerror = constr.onerror.bind(context);
+            script.onerror = bind(context, constr.onerror);
         }
         
         placeNode(script, constr.node, position);
@@ -103,7 +100,7 @@
         var done = false;
         context = ((context==undefined)?this:context);
             
-        var boundOnload = onload.bind(context);
+        var boundOnload = bind(context, onload);
         var func = function() {
             if (!done && (!node.readyState || node.readyState=="loaded" || node.readyState=="complete")) {
                 done = true;
@@ -112,9 +109,9 @@
         };
             
         if (ieVersion()) {
-            node.onreadystatechange = func.bind(context);
+            node.onreadystatechange = bind(context, func);
         } else {
-            node.onload = func.bind(context);
+            node.onload = bind(context, func);
         }
     }
 	
