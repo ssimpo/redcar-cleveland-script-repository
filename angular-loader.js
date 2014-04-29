@@ -12,9 +12,16 @@
 	//		Create Unit Tests
 	
 	var apps = [];
-	var $;
-	
 	var hasTestsCached = {};
+	var $;
+	var angularAppId = "rcbc-app";
+	var XMLHttpFactories = [
+		function(){return new XMLHttpRequest()},
+		function(){return new ActiveXObject("Msxml2.XMLHTTP")},
+		function(){return new ActiveXObject("Msxml3.XMLHTTP")},
+		function(){return new ActiveXObject("Microsoft.XMLHTTP")}
+	];
+	
 	var hasTests = {
 		"requireJs": function(){
 			// summary:
@@ -141,15 +148,6 @@
 		return bound;
 	}
 	
-	function getHeadNode(){
-		// summary:
-		//		Get the dom head element.
-		// returns: XMLDOMNode
-		//		The head node.
-		
-		return global.document.getElementsByTagName("head")[0];
-	}
-	
 	function appendScript(constr){
         // summary:
         //      Insert a script into the DOM at a given point.
@@ -209,32 +207,32 @@
         return script;
     }
 	
-	function placeNode(node, refnode, position) {
+	function addOnloadFunction(node, onload, context){
 		// summary:
-		//		Place a node in the Dom with reference to another node.
+		//		Add an onLoad function to a node with a specified
+		//		context (optional).
+		// description:
+		//		Add an onLoad function to a node with a specified context. This
+		//		is a cross-browser solution that should work in IE8.
 		// node: Object XMLDOMNode
-		//		The node to place.
-		// refNode: Object XMLDOMNode
-		//		The reference node.
-		// position: String|undefined
-		//		Where to place node in relation to refNode.  Four options:
-		//			First: Place node as the first child of refNode.
-		//			Last: Place node as the last child of refNode.
-		//			Before: Place node before refNode in the Dom tree.
-		//			After: Place node after refNode in the Dom tree
+		//		The node to add an onLoad function to.
+		// onload: Function
+		//		The onload function to apply.
+		// context: Object|undefined
+		//		Context to bind the onload function to.
 		
-        position = ((position === undefined) ? "last": position);
-		
-        switch(position.toLowerCase()){
-			case "first":
-                refnode.parentNode.insertBefore(node, refnode.parentNode.firstChild);
-            case "last":
-                refnode.appendChild(node);
-            case "before":
-                refnode.parentNode.insertBefore(node, refnode);
-            case "after":
-                refnode.parentNode.insertBefore(node, refnode.nextSibling);
-        }
+        var done = false;
+        context = ((context === undefined) ? this : context);
+            
+        var boundOnload = bind(context, onload);
+        var func = function(){
+            if(!done && (!node.readyState || node.readyState === "loaded" || node.readyState === "complete")){
+                done = true;
+                boundOnload();
+            }
+        };
+        
+		on((has("ie") ? "readystatechange" : "load"), func, node, context);
     }
 	
 	function on(eventName, func, subject, context){
@@ -273,203 +271,42 @@
 		}
 	}
 	
-	function addOnloadFunction(node, onload, context){
+	function getHeadNode(){
 		// summary:
-		//		Add an onLoad function to a node with a specified
-		//		context (optional).
-		// description:
-		//		Add an onLoad function to a node with a specified context. This
-		//		is a cross-browser solution that should work in IE8.
+		//		Get the dom head element.
+		// returns: XMLDOMNode
+		//		The head node.
+		
+		return global.document.getElementsByTagName("head")[0];
+	}
+	
+	function placeNode(node, refnode, position) {
+		// summary:
+		//		Place a node in the Dom with reference to another node.
 		// node: Object XMLDOMNode
-		//		The node to add an onLoad function to.
-		// onload: Function
-		//		The onload function to apply.
-		// context: Object|undefined
-		//		Context to bind the onload function to.
+		//		The node to place.
+		// refNode: Object XMLDOMNode
+		//		The reference node.
+		// position: String|undefined
+		//		Where to place node in relation to refNode.  Four options:
+		//			First: Place node as the first child of refNode.
+		//			Last: Place node as the last child of refNode.
+		//			Before: Place node before refNode in the Dom tree.
+		//			After: Place node after refNode in the Dom tree
 		
-        var done = false;
-        context = ((context === undefined) ? this : context);
-            
-        var boundOnload = bind(context, onload);
-        var func = function(){
-            if(!done && (!node.readyState || node.readyState === "loaded" || node.readyState === "complete")){
-                done = true;
-                boundOnload();
-            }
-        };
-        
-		on((has("ie") ? "readystatechange" : "load"), func, node, context);
+        position = ((position === undefined) ? "last": position);
+		
+        switch(position.toLowerCase()){
+			case "first":
+                refnode.parentNode.insertBefore(node, refnode.parentNode.firstChild);
+            case "last":
+                refnode.appendChild(node);
+            case "before":
+                refnode.parentNode.insertBefore(node, refnode);
+            case "after":
+                refnode.parentNode.insertBefore(node, refnode.nextSibling);
+        }
     }
-	
-	function executeProfile(mids, callback){
-		// summary:
-		//		Execute a profile and then call callback when complete.
-		// mids: Array
-		//		Array of scripts to load into the current page.
-		// callback: Function
-		//		Function to callback when done loading scripts.
-		
-		var loaders = [];
-		function runNext(){
-			if(loaders.length > 0){
-				var loader = loaders.shift();
-				loader();
-			}else{
-				for(var i = 0; i < apps.length; i++){
-					angular.bootstrap(apps[i].appNode, [apps[i].appName]);
-				}
-				callback();
-			}
-		}
-		
-		function loader(i){
-			return function(){
-				appendScript({
-					"onload": runNext,
-					"src": location.protocol+"//"+location.host+mids[i]
-				});
-			};
-		}
-		
-		for(var i = 0; i < mids.length; i++){
-			loaders.push(loader(i));
-		}
-		
-		runNext();
-	};
-	
-	function findAngularApps(context) {
-		// summary:
-		//		Find the angular apps on the current page.
-		// returns: Array
-		//		The nodes found by the querySelector.
-		
-		context = ((context === undefined) ? global.document : context);
-		
-		return $("[rcbc-app]", context);
-	}
-	
-	function getProfileUrl(appName){
-		// summary:
-		//		Get the profile url for a given app name.
-		// appName: String
-		//		Name of app to calculate profile url for.
-		// returns: String
-		//		The profile url.
-		
-		return "/apps/" + appName + "/app/profile.json";
-	}
-		
-	function addAppPathToUrl(url, appName){
-		// summary;
-		//		Add an app path (according to supplied app name) to the
-		//		beginning of a url.
-		// url: String
-		//		The url to add to.
-		// appName: String
-		//		The app name to create paths for.
-		// returns: String
-		//		The calculated full relative path.
-		
-		return "/apps/" + appName + "/app/" + url;
-	}
-		
-	function calculateLibraryPath(id, useMin){
-		// summary:
-		//		Calculate the path to a given library.
-		// id: String
-		//		The name of the library.
-		// useMin: Boolean | Undefined
-		//		Use the minified version of the library (defaults to true).
-		// returns: String
-		//		The path to the library.
-		
-		useMin = ((useMin === undefined) ? true : useMin);
-		
-		return "/apps/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
-	}
-	
-	function loadProfile(appDom, callback){
-		// summary:
-		//		Load a profile and then fire the callback passing the profile.
-		// appDom: Object XMLDOMNode
-		//		The dom node representing the app for which a profile is needed.
-		// callback: Function
-		//		The callback to fire when the profile is loaded.
-		
-		var appName = getNodeAttribute(appDom, "rcbc-app");
-		var appProfileUrl = getProfileUrl(appName);
-		ajaxGet(appProfileUrl, function(data){
-			for (var i = 0; i < data.scripts.length; i++) {
-				data.scripts[i] = addAppPathToUrl(data.scripts[i], appName);
-			}
-			for (var i = (data.libraries.length-1); i >= 0; i--) {
-				var id = data.libraries[i];
-				data.scripts.unshift(calculateLibraryPath(id));
-			}
-			
-			apps.push({
-				"appName": appName,
-				"appNode": appDom
-			});
-			callback(data);
-		}, function(){
-				console.log("ERROR");
-		});
-	}
-	
-	function ajaxGet(src, callback, errCallback){
-		// summary:
-		//		Get a url, process as json and optionally fire callback or
-		//		errCallback (on failure).
-		// description:
-		//		Use either dojo 1.8+ or 1.5 ajax code to load a json resource
-		//		and optionally fire callback or errCallback (on failure).
-		// src: String
-		//		The resource url to load.
-		// callback: Function
-		//		The optional callback to fire when the resource is loaded.
-		//		Resource is passed to the callback.
-		// errCallback: Function
-		//		The optional error callback to call on resource failure. The
-		//		error object is passed to the callback.
-		
-		callback = callback || function(){};
-		errCallback = errCallback || function(){};
-		
-		var opts = {"handleAs": "json"};
-		if(has("dojo15")){
-			opts.load = callback;
-			opts.error = errCallback;
-			opts.url = src;
-			dojo.xhrGet(opts);
-		}else if(has("dojo18")){
-			opts.method = "get";
-			require(["dojo/query"], function(request){
-				request(src, opts).then(callback, errCallback);
-			});
-		}else{
-			sendRequest(src, function(data){
-				callback(JSON.parse(data));
-			}, errCallback);
-		}
-	}
-	
-	function loadApps(){
-		// summary:
-		//		Load up all the Angular applications on the current page.
-		
-		var apps = findAngularApps();
-		if(apps.length > 0){
-			for(var i = 0; i < apps.length; i++){
-				loadProfile(apps[i], function(profile){
-					executeProfile(profile.scripts, function(){
-							console.log("DONE");
-					});
-				});
-			}
-		}
-	}
 	
 	function getNodeAttribute(node, attribute){
 		// summary:
@@ -540,6 +377,176 @@
 		}
 	}
 	
+	function findAngularApps(context) {
+		// summary:
+		//		Find the angular apps on the current page.
+		// returns: Array
+		//		The nodes found by the querySelector.
+		
+		context = ((context === undefined) ? global.document : context);
+		
+		return $("["+angularAppId+"]", context);
+	}
+	
+	function loadProfile(appDom, callback){
+		// summary:
+		//		Load a profile and then fire the callback passing the profile.
+		// appDom: Object XMLDOMNode
+		//		The dom node representing the app for which a profile is needed.
+		// callback: Function
+		//		The callback to fire when the profile is loaded.
+		
+		var appName = getNodeAttribute(appDom, angularAppId);
+		var appProfileUrl = getProfileUrl(appName);
+		ajaxGet(appProfileUrl, function(data){
+			for (var i = 0; i < data.scripts.length; i++) {
+				data.scripts[i] = addAppPathToUrl(data.scripts[i], appName);
+			}
+			for (var i = (data.libraries.length-1); i >= 0; i--) {
+				var id = data.libraries[i];
+				data.scripts.unshift(calculateLibraryPath(id));
+			}
+			
+			apps.push({
+				"appName": appName,
+				"appNode": appDom
+			});
+			callback(data);
+		}, function(){
+			console.log("ERROR");
+		});
+	}
+	
+	function executeProfile(mids, callback){
+		// summary:
+		//		Execute a profile and then call callback when complete.
+		// mids: Array
+		//		Array of scripts to load into the current page.
+		// callback: Function
+		//		Function to callback when done loading scripts.
+		
+		var loaders = [];
+		function runNext(){
+			if(loaders.length > 0){
+				var loader = loaders.shift();
+				loader();
+			}else{
+				for(var i = 0; i < apps.length; i++){
+					angular.bootstrap(apps[i].appNode, [apps[i].appName]);
+				}
+				callback();
+			}
+		}
+		
+		function loader(i){
+			return function(){
+				appendScript({
+					"onload": runNext,
+					"src": location.protocol+"//"+location.host+mids[i]
+				});
+			};
+		}
+		
+		for(var i = 0; i < mids.length; i++){
+			loaders.push(loader(i));
+		}
+		
+		runNext();
+	};
+	
+	function loadApps(){
+		// summary:
+		//		Load up all the Angular applications on the current page.
+		
+		var apps = findAngularApps();
+		if(apps.length > 0){
+			for(var i = 0; i < apps.length; i++){
+				loadProfile(apps[i], function(profile){
+					executeProfile(profile.scripts, function(){
+							console.log("DONE");
+					});
+				});
+			}
+		}
+	}
+	
+	function getProfileUrl(appName){
+		// summary:
+		//		Get the profile url for a given app name.
+		// appName: String
+		//		Name of app to calculate profile url for.
+		// returns: String
+		//		The profile url.
+		
+		return "/apps/" + appName + "/app/profile.json";
+	}
+		
+	function addAppPathToUrl(url, appName){
+		// summary;
+		//		Add an app path (according to supplied app name) to the
+		//		beginning of a url.
+		// url: String
+		//		The url to add to.
+		// appName: String
+		//		The app name to create paths for.
+		// returns: String
+		//		The calculated full relative path.
+		
+		return "/apps/" + appName + "/app/" + url;
+	}
+		
+	function calculateLibraryPath(id, useMin){
+		// summary:
+		//		Calculate the path to a given library.
+		// id: String
+		//		The name of the library.
+		// useMin: Boolean | Undefined
+		//		Use the minified version of the library (defaults to true).
+		// returns: String
+		//		The path to the library.
+		
+		useMin = ((useMin === undefined) ? true : useMin);
+		
+		return "/apps/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
+	}
+	
+	function ajaxGet(src, callback, errCallback){
+		// summary:
+		//		Get a url, process as json and optionally fire callback or
+		//		errCallback (on failure).
+		// description:
+		//		Use either dojo 1.8+ or 1.5 ajax code to load a json resource
+		//		and optionally fire callback or errCallback (on failure).
+		// src: String
+		//		The resource url to load.
+		// callback: Function
+		//		The optional callback to fire when the resource is loaded.
+		//		Resource is passed to the callback.
+		// errCallback: Function
+		//		The optional error callback to call on resource failure. The
+		//		error object is passed to the callback.
+		
+		callback = callback || function(){};
+		errCallback = errCallback || function(){};
+		
+		var opts = {"handleAs": "json"};
+		if(has("dojo15")){
+			opts.load = callback;
+			opts.error = errCallback;
+			opts.url = src;
+			dojo.xhrGet(opts);
+		}else if(has("dojo18")){
+			opts.method = "get";
+			require(["dojo/query"], function(request){
+				request(src, opts).then(callback, errCallback);
+			});
+		}else{
+			sendRequest(src, function(data){
+				callback(JSON.parse(data));
+			}, errCallback);
+		}
+	}
+	
 	function sendRequest(src, callback, errCallback, postData){
 		// summary:
 		//		Native Ajax sending and handling function.
@@ -581,13 +588,6 @@
 		}
 		request.send(postData);
 	}
-
-	var XMLHttpFactories = [
-		function(){return new XMLHttpRequest()},
-		function(){return new ActiveXObject("Msxml2.XMLHTTP")},
-		function(){return new ActiveXObject("Msxml3.XMLHTTP")},
-		function(){return new ActiveXObject("Microsoft.XMLHTTP")}
-	];
 
 	function createXMLHTTPObject(){
 		// summary:
