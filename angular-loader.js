@@ -32,48 +32,42 @@
 				//		Is this running in test suit (Jasmine)?
 				// returns: Boolean
 				
-				module.hasTestsCached["isJasmineTest"] = ((typeof global.describe === "function") && (typeof global.it === "function"));
-				return module.hasTestsCached["isJasmineTest"];
+				return ((typeof global.describe === "function") && (typeof global.it === "function"));
 			},
 			"requireJs": function(){
 				// summary:
 				//		Is requireJs loaded and available.
 				// returns: Boolean
 				
-				module.hasTestsCached["requireJs"] = ((typeof global.define === "function") && (typeof global.require === "function"));
-				return module.hasTestsCached["requireJs"];
+				return ((typeof global.define === "function") && (typeof global.require === "function"));
 			},
 			"dojo18": function(){
 				// summary:
 				//		Is Dojo1.8+ available.
 				// returns: Boolean
 				
-				module.hasTestsCached["dojo18"] = (module.isProperty(window, "dojoConfig") && module.has("requireJs"));
-				return module.hasTestsCached["dojo18"];
+				return (module.isProperty(window, "dojoConfig") && module.has("requireJs"));
 			},
 			"dojo15": function(){
 				// summary:
 				//		Is Dojo1.5 available.
 				// returns: Boolean
 				
-				module.hasTestsCached["dojo15"] = module.isProperty(global, "dojo");
-				return module.hasTestsCached["dojo15"];
+				return module.isProperty(global, "dojo");
 			},
 			"jsonParser": function(){
 				// summary:
 				//		Is native JSON Parser available.
 				// returns: Boolean
 				
-				module.hasTestsCached["jsonParser"] = module.isProperty(global, "JSON");
-				return module.hasTestsCached["jsonParser"];
+				return module.isProperty(global, "JSON");
 			},
 			"querySelectorAll": function(){
 				// summary:
 				//		Is native dom query selector (all) available
 				// returns: Boolean
 				
-				module.hasTestsCached["querySelectorAll"] = module.isProperty(global.document, "querySelectorAll");
-				return module.hasTestsCached["querySelectorAll"];
+				return module.isProperty(global.document, "querySelectorAll");
 			},
 			"ie": function(){
 				// summary:
@@ -97,9 +91,7 @@
 					}
 				}
 			
-				module.hasTestsCached["ie"]  = (((isIE === undefined) || (isIE === 0)) ? false : isIE);
-			
-				return module.hasTestsCached["ie"];
+				return (((isIE === undefined) || (isIE === 0)) ? false : isIE);
 			}
 		},
 		
@@ -111,16 +103,12 @@
 			//		Test to perform.
 			// returns: Mixed
 			//		Test result
-			// throws:
-			//		If no test found will throw an error.
 		
-			if(module.isProperty(module.hasTestsCached, test)){
-				return module.hasTestsCached[test];
-			}else if(module.isProperty(module.hasTests, test)){
-				return module.hasTests[test]();
+			if(!module.isProperty(module.hasTestsCached, test)){
+				module.hasTestsCached[test] = module.hasTests[test]();
 			}
-		
-			throw "Test: " + test + " not found.";
+			
+			return module.hasTestsCached[test];
 		},
 		
 		isProperty: function(obj, key){
