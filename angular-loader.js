@@ -12,96 +12,97 @@
 	// todo:
 	//		Create Unit Tests
 	
-	var apps = [];
-	var hasTestsCached = {};
 	var $;
-	var angularAppId = "rcbc-app";
-	var XMLHttpFactories = [
-		function(){return new XMLHttpRequest();},
-		function(){return new ActiveXObject("Msxml2.XMLHTTP");},
-		function(){return new ActiveXObject("Msxml3.XMLHTTP");},
-		function(){return new ActiveXObject("Microsoft.XMLHTTP");}
-	];
-	var loadedScripts = {};
 	
-	var hasTests = {
-		"isJasmineTest": function(){
-			// summary:
-			//		Is this running in test suit (Jasmine)?
-			// returns: Boolean
-			
-			hasTestsCached["isJasmineTest"] = ((typeof global.describe === "function") && (typeof global.it === "function"));
-			return hasTestsCached["isJasmineTest"];
-		},
-		"requireJs": function(){
-			// summary:
-			//		Is requireJs loaded and available.
-			// returns: Boolean
-			
-			hasTestsCached["requireJs"] = ((typeof global.define === "function") && (typeof global.require === "function"));
-			return hasTestsCached["requireJs"];
-		},
-		"dojo18": function(){
-			// summary:
-			//		Is Dojo1.8+ available.
-			// returns: Boolean
-			
-			hasTestsCached["dojo18"] = (module.isProperty(window, "dojoConfig") && module.has("requireJs"));
-			return hasTestsCached["dojo18"];
-		},
-		"dojo15": function(){
-			// summary:
-			//		Is Dojo1.5 available.
-			// returns: Boolean
-			
-			hasTestsCached["dojo15"] = module.isProperty(global, "dojo");
-			return hasTestsCached["dojo15"];
-		},
-		"jsonParser": function(){
-			// summary:
-			//		Is native JSON Parser available.
-			// returns: Boolean
-			
-			hasTestsCached["jsonParser"] = module.isProperty(global, "JSON");
-			return hasTestsCached["jsonParser"];
-		},
-		"querySelectorAll": function(){
-			// summary:
-			//		Is native dom query selector (all) available
-			// returns: Boolean
-			
-			hasTestsCached["querySelectorAll"] = module.isProperty(global.document, "querySelectorAll");
-			return hasTestsCached["querySelectorAll"];
-		},
-		"ie": function(){
-			// summary:
-			//      Get the Internet Explorer version (or false if other browser).
-			// note:
-			//      Code largely taken from dojo._base.sniff.
-			// returns: integer
-			//      Version number
-			
-			var isIE;
-			var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
-			if(!webkit){
-				if(navigator.userAgent.indexOf("Opera") == -1){
-					if(document.all) {
-						isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
-						var mode = document.documentMode;
-						if(mode && mode != 5 && Math.floor(isIE) != mode){
-							isIE = mode;
+	var module = {
+		apps: [],
+		hasTestsCached: {},
+		angularAppId: "rcbc-app",
+		XMLHttpFactories: [
+			function(){return new XMLHttpRequest();},
+			function(){return new ActiveXObject("Msxml2.XMLHTTP");},
+			function(){return new ActiveXObject("Msxml3.XMLHTTP");},
+			function(){return new ActiveXObject("Microsoft.XMLHTTP");}
+		],
+		loadedScripts: {},
+		
+		hasTests: {
+			"isJasmineTest": function(){
+				// summary:
+				//		Is this running in test suit (Jasmine)?
+				// returns: Boolean
+				
+				module.hasTestsCached["isJasmineTest"] = ((typeof global.describe === "function") && (typeof global.it === "function"));
+				return module.hasTestsCached["isJasmineTest"];
+			},
+			"requireJs": function(){
+				// summary:
+				//		Is requireJs loaded and available.
+				// returns: Boolean
+				
+				module.hasTestsCached["requireJs"] = ((typeof global.define === "function") && (typeof global.require === "function"));
+				return module.hasTestsCached["requireJs"];
+			},
+			"dojo18": function(){
+				// summary:
+				//		Is Dojo1.8+ available.
+				// returns: Boolean
+				
+				module.hasTestsCached["dojo18"] = (module.isProperty(window, "dojoConfig") && module.has("requireJs"));
+				return module.hasTestsCached["dojo18"];
+			},
+			"dojo15": function(){
+				// summary:
+				//		Is Dojo1.5 available.
+				// returns: Boolean
+				
+				module.hasTestsCached["dojo15"] = module.isProperty(global, "dojo");
+				return module.hasTestsCached["dojo15"];
+			},
+			"jsonParser": function(){
+				// summary:
+				//		Is native JSON Parser available.
+				// returns: Boolean
+				
+				module.hasTestsCached["jsonParser"] = module.isProperty(global, "JSON");
+				return module.hasTestsCached["jsonParser"];
+			},
+			"querySelectorAll": function(){
+				// summary:
+				//		Is native dom query selector (all) available
+				// returns: Boolean
+				
+				module.hasTestsCached["querySelectorAll"] = module.isProperty(global.document, "querySelectorAll");
+				return module.hasTestsCached["querySelectorAll"];
+			},
+			"ie": function(){
+				// summary:
+				//      Get the Internet Explorer version (or false if other browser).
+				// note:
+				//      Code largely taken from dojo._base.sniff.
+				// returns: integer
+				//      Version number
+				
+				var isIE;
+				var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
+				if(!webkit){
+					if(navigator.userAgent.indexOf("Opera") == -1){
+						if(document.all) {
+							isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
+							var mode = document.documentMode;
+							if(mode && mode != 5 && Math.floor(isIE) != mode){
+								isIE = mode;
+							}
 						}
 					}
 				}
+			
+				module.hasTestsCached["ie"]  = (((isIE === undefined) || (isIE === 0)) ? false : isIE);
+			
+				return module.hasTestsCached["ie"];
 			}
-        
-			hasTestsCached["ie"]  = (((isIE === undefined) || (isIE === 0)) ? false : isIE);
-        
-			return hasTestsCached["ie"];
-		}
-	};
-	
-	var module = {
+		},
+		
 		has: function(test){
 			// summary:
 			//		Perform a test, either using the cache of the previous test or
@@ -113,10 +114,10 @@
 			// throws:
 			//		If no test found will throw an error.
 		
-			if(module.isProperty(hasTestsCached, test)){
-				return hasTestsCached[test];
-			}else if(module.isProperty(hasTests, test)){
-				return hasTests[test]();
+			if(module.isProperty(module.hasTestsCached, test)){
+				return module.hasTestsCached[test];
+			}else if(module.isProperty(module.hasTests, test)){
+				return module.hasTests[test]();
 			}
 		
 			throw "Test: " + test + " not found.";
@@ -198,8 +199,8 @@
 			// returns: XMLNode
 			//      The script node being used as a loader.
 				
-			if(!module.isProperty(loadedScripts, constr.src)){
-				loadedScripts[constr.src] = true;
+			if(!module.isProperty(module.loadedScripts, constr.src)){
+				module.loadedScripts[constr.src] = true;
 				var context = ((module.isProperty(constr, "context")) ? constr.context : this);
 				var position = ((position === undefined) ? "last" : position);
 				constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
@@ -435,7 +436,7 @@
 			
 			context = ((context === undefined) ? global.document : context);
 			
-			return $("["+angularAppId+"]", context);
+			return $("["+module.angularAppId+"]", context);
 		},
 		
 		loadProfile: function(appDom, callback){
@@ -446,7 +447,7 @@
 			// callback: Function
 			//		The callback to fire when the profile is loaded.
 			
-			var appName = module.getNodeAttribute(appDom, angularAppId);
+			var appName = module.getNodeAttribute(appDom, module.angularAppId);
 			var appProfileUrl = module.getProfileUrl(appName);
 			module.ajaxGet(appProfileUrl, function(data){
 				var i;
@@ -459,7 +460,7 @@
 					data.scripts.unshift(module.calculateLibraryPath(id));
 				}
 				
-				apps.push({
+				module.apps.push({
 					"appName": appName,
 					"appNode": appDom
 				});
@@ -483,9 +484,9 @@
 					var loader = loaders.shift();
 					loader();
 				}else{
-					for(var i = 0; i < apps.length; i++){
+					for(var i = 0; i < module.apps.length; i++){
 						try{
-							angular.bootstrap(apps[i].appNode, [apps[i].appName]);
+							angular.bootstrap(module.apps[i].appNode, [module.apps[i].appName]);
 						}catch(e){ }
 					}
 					callback();
@@ -651,9 +652,9 @@
 			//		The Ajax loading object.
 			
 			var xmlhttp = false;
-			for(var i=0; i< XMLHttpFactories.length; i++){
+			for(var i=0; i< module.XMLHttpFactories.length; i++){
 				try{
-					xmlhttp = XMLHttpFactories[i]();
+					xmlhttp = module.XMLHttpFactories[i]();
 				}catch(e){
 					continue;
 				}
@@ -770,24 +771,24 @@
 					}
 				});
 			}
+		},
+		
+		load: function(){
+			// summary:
+			//		Main module function.
+		
+			module.loadJsonParser(function(){
+				module.getQuerySelector(function(selector){
+					$ = selector;
+					module.ready(global.window, module.loadApps);
+				});
+			});
 		}
 	};
-	
-	function load(){
-		// summary:
-		//		Main module function.
-		
-		module.loadJsonParser(function(){
-			module.getQuerySelector(function(selector){
-				$ = selector;
-				module.ready(global.window, module.loadApps);
-			});
-		});
-	}
 	
 	if(module.has("isJasmineTest")){
 		window.angularLoader = module;
 	}else{
-		load();
+		module.load();
 	}
 })(window);
