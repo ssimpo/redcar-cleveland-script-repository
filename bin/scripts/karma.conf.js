@@ -4,6 +4,9 @@ module.exports = function(config){
         
         "files": [
             "angular-loader.js",
+            
+            "bin/scripts/node_modules/jasmine-expect/dist/jasmine-matchers.js",
+            
             "test/unit/**/*.js"
         ],
         

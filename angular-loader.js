@@ -415,7 +415,7 @@
 			
 			context = ((context === undefined) ? global.document : context);
 			
-			return context.querySelectorAll(selector);
+			return context.querySelectorAll(selector, context);
 		},
 		
 		getQuerySelector: function(callback){
@@ -441,8 +441,6 @@
 			}else if(module.has("querySelectorAll")){
 				callback(module.querySelector);
 			}else{
-				
-				console.log(module.calculateLibraryPath("jquery"));
 				module.appendScript({
 					"src": module.calculateLibraryPath("jquery"),
 					"onload": function(){

@@ -81,6 +81,12 @@ describe("Angular Loader Tester", function(){
 	});
 	
 	it("querySelector", function(){
+		var article = document.createElement("article");
+		article.innerHTML = "<h1 class=\"TEST\"></h1><p>Test</p><p>More test</p>";
+		
+		var test = angularLoader.querySelector("[class=TEST]", article);
+		expect(test.length).toBe(1);
+		expect(test[0].tagName.toLowerCase()).toBe("h1");
 	});
 	
 	it("getQuerySelector", function(){
@@ -89,7 +95,6 @@ describe("Angular Loader Tester", function(){
 	it("findAngularApps", function(){
 		var selectorLoaded = false;
 		angularLoader.libraryUrlOverride["jquery"] = "http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js";
-		
 		
 		runs(function(){
 			angularLoader.loadQuerySelector(function(){
@@ -102,11 +107,19 @@ describe("Angular Loader Tester", function(){
 		}, "querySelector to be loaded", 7000);
 		
 		runs(function(){
+			var appId = angularLoader.angularAppId;
 			var article = document.createElement("article");
-			article.innerHTML = "<div rcbc-app=\"App1\"></div><div rcbc-app=\"App2\"></div><div rcbc-app=\"App3\"></div>";
+			article.innerHTML = "<div "+appId+"=\"App1\"></div><section "+appId+"=\"App2\"></section><div "+appId+"=\"App3\"></div><div ng-app=\"App4\"></div>";
 			
 			var apps = angularLoader.findAngularApps(article);
-			expect(apps.length).toEqual(3);
+			expect(apps.length).toBe(3);
+			expect(apps[0]).toBeHtmlNode();
+			expect(apps[1].tagName.toLowerCase()).toBe("section");
+			
+			angularLoader.angularAppId = "ng-app";
+			var apps = angularLoader.findAngularApps(article);
+			expect(apps.length).toBe(1);
+			angularLoader.angularAppId = appId ;
 		});
 	});
 	
