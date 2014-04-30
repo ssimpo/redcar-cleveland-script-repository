@@ -19,10 +19,10 @@
 		hasTestsCached: {},
 		angularAppId: "rcbc-app",
 		XMLHttpFactories: [
-			function(){return new XMLHttpRequest();},
-			function(){return new ActiveXObject("Msxml2.XMLHTTP");},
-			function(){return new ActiveXObject("Msxml3.XMLHTTP");},
-			function(){return new ActiveXObject("Microsoft.XMLHTTP");}
+			function(){return new global.XMLHttpRequest();},
+			function(){return new global.ActiveXObject("Msxml2.XMLHTTP");},
+			function(){return new global.ActiveXObject("Msxml3.XMLHTTP");},
+			function(){return new global.ActiveXObject("Microsoft.XMLHTTP");}
 		],
 		loadedScripts: {},
 		
@@ -46,7 +46,7 @@
 				//		Is Dojo1.8+ available.
 				// returns: Boolean
 				
-				return (module.isProperty(window, "dojoConfig") && module.has("requireJs"));
+				return (module.isProperty(global.window, "dojoConfig") && module.has("requireJs"));
 			},
 			"dojo15": function(){
 				// summary:
@@ -78,13 +78,13 @@
 				//      Version number
 				
 				var isIE;
-				var webkit = parseFloat(navigator.userAgent.split("WebKit/")[1]) || undefined;
+				var webkit = parseFloat(global.navigator.userAgent.split("WebKit/")[1]) || undefined;
 				if(!webkit){
-					if(navigator.userAgent.indexOf("Opera") == -1){
-						if(document.all) {
-							isIE = parseFloat(navigator.appVersion.split("MSIE ")[1]) || undefined;
-							var mode = document.documentMode;
-							if(mode && mode != 5 && Math.floor(isIE) != mode){
+					if(global.navigator.userAgent.indexOf("Opera") === -1){
+						if(global.document.all) {
+							isIE = parseFloat(global.navigator.appVersion.split("MSIE ")[1]) || undefined;
+							var mode = global.document.documentMode;
+							if(mode && mode !== 5 && Math.floor(isIE) !== mode){
 								isIE = mode;
 							}
 						}
@@ -142,16 +142,16 @@
 		
 			var slice = [].slice;
 			var args = slice.call(arguments, 2);
-			var nop = function () {};
+			var Nop = function () {};
 			var bound = function () {
 				return func.apply(
-					((this instanceof nop) ? this : (context || {})),
+					((this instanceof Nop) ? this : (context || {})),
 					args.concat(slice.call(arguments))
 				);
 			};
 		
-			nop.prototype = func.prototype;
-			bound.prototype = new nop();
+			Nop.prototype = func.prototype;
+			bound.prototype = new Nop();
 		
 			return bound;
 		},
@@ -193,7 +193,7 @@
 				var position = ((position === undefined) ? "last" : position);
 				constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
     
-				var script = document.createElement("script");
+				var script = global.document.createElement("script");
 				script.type = "text/javascript";
 				script.src = constr.src;
 				constr.async = ((module.isProperty(constr, "async")) ? constr.async : false);
@@ -296,7 +296,7 @@
 						attachFunc(e, returner.detach);
 					};
 				}else{
-					subject[onEventName] = function(){
+					subject[onEventName] = function(e){
 						oldFunc();
 						attachFunc(e, returner.detach);
 					};
@@ -362,9 +362,11 @@
 			if(!result) {
 				var attributes = node.attributes;
 				var length = attributes.length;
-				for(var i = 0; i < length; i++)
-					if(attributes[i].nodeName === attr)
+				for(var i = 0; i < length; i++){
+					if(attributes[i].nodeName === attribute){
 						result = attributes[i].nodeValue;
+					}
+				}
 			}
 			return result;
 		},
@@ -396,14 +398,14 @@
 			//		the actual selector as the callback argument.
 			
 			if(module.has("dojo15")){
-				callback(dojo.query);
+				callback(global.dojo.query);
 			}else if(module.has("dojo18")){
-				require(["dojo/query"], callback);
+				global.require(["dojo/query"], callback);
 			}else if(typeof global.$ === "function"){
 				callback(global.$);
 			}else if(module.has("requireJs")){
-				define.amd = true;
-				require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
+				global.define.amd = true;
+				global.require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
 			}else if(module.has("querySelectorAll")){
 				callback(module.querySelector);
 			}else{
@@ -474,7 +476,7 @@
 				}else{
 					for(var i = 0; i < module.apps.length; i++){
 						try{
-							angular.bootstrap(module.apps[i].appNode, [module.apps[i].appName]);
+							global.angular.bootstrap(module.apps[i].appNode, [module.apps[i].appName]);
 						}catch(e){ }
 					}
 					callback();
@@ -485,7 +487,7 @@
 				return function(){
 					module.appendScript({
 						"onload": runNext,
-						"src": location.protocol+"//"+location.host+mids[i]
+						"src": global.location.protocol+"//"+global.location.host+mids[i]
 					});
 				};
 			}
@@ -577,10 +579,10 @@
 				opts.load = callback;
 				opts.error = errCallback;
 				opts.url = src;
-				dojo.xhrGet(opts);
+				global.dojo.xhrGet(opts);
 			}else if(module.has("dojo18")){
 				opts.method = "get";
-				require(["dojo/query"], function(request){
+				global.require(["dojo/query"], function(request){
 					request(src, opts).then(callback, errCallback);
 				});
 			}else{
@@ -664,11 +666,11 @@
 			//		The callback function when the dom has loaded.
 			
 			if(module.has("dojo15")){
-				dojo.ready(function(){
+				global.dojo.ready(function(){
 					callback();
 				});
 			}else if(module.has("dojo18")) {
-				require(["dojo/ready"], function(ready){
+				global.require(["dojo/ready"], function(ready){
 					ready(function(){
 						callback();
 					});
@@ -715,7 +717,7 @@
 						top = !win.frameElement;
 					}catch(e){ }
 					if(top){
-						contentLoadedPoll(root, init);
+						module.contentLoadedPoll(root, init);
 					}
 				}
 				
@@ -735,7 +737,7 @@
 			try{
 				root.doScroll("left");
 			}catch(e){
-				setTimeout(poll, 50);
+				global.setTimeout(module.contentLoadedPoll, 50);
 				return;
 			}
 			init("poll");
@@ -752,9 +754,9 @@
 				callback();
 			}else{
 				module.appendScript({
-					"src": calculateLibraryPath("json3"),
+					"src": module.calculateLibraryPath("json3"),
 					"onload": function(){
-						JSON3.runInContext(module);
+						global.JSON3.runInContext(module);
 						callback();
 					}
 				});
@@ -775,7 +777,7 @@
 	};
 	
 	if(module.has("isJasmineTest")){
-		window.angularLoader = module;
+		global.angularLoader = module;
 	}else{
 		module.load();
 	}
