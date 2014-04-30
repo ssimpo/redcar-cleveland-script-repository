@@ -32,21 +32,30 @@
 				//		Is this running in test suit (Jasmine)?
 				// returns: Boolean
 				
-				return ((typeof global.describe === "function") && (typeof global.it === "function"));
+				return (
+					(typeof global.describe === "function") &&
+						(typeof global.it === "function")
+				);
 			},
 			"requireJs": function(){
 				// summary:
 				//		Is requireJs loaded and available.
 				// returns: Boolean
 				
-				return ((typeof global.define === "function") && (typeof global.require === "function"));
+				return (
+					(typeof global.define === "function") &&
+						(typeof global.require === "function")
+				);
 			},
 			"dojo18": function(){
 				// summary:
 				//		Is Dojo1.8+ available.
 				// returns: Boolean
 				
-				return (module.isProperty(global.window, "dojoConfig") && module.has("requireJs"));
+				return (
+					module.isProperty(global.window, "dojoConfig") &&
+						module.has("requireJs")
+				);
 			},
 			"dojo15": function(){
 				// summary:
@@ -69,6 +78,25 @@
 				
 				return module.isProperty(global.document, "querySelectorAll");
 			},
+			"webkit": function(){
+				// summary:
+				//		Get the WebKit version number if using webkit
+				
+				var userAgent = global.navigator.userAgent;
+				return (parseFloat(userAgent.split("WebKit/")[1]) || undefined);
+			},
+			"opera": function(){
+				// summary:
+				//		Get the Opera version number if using webkit
+				
+				var userAgent = global.navigator.userAgent;
+				var appVersion = parseFloat(global.navigator.appVersion);
+				return (
+					(appVersion >= 9.8) ?
+						(parseFloat(userAgent.split("Version/")[1]) || appVersion)
+						: appVersion
+				);
+			},
 			"ie": function(){
 				// summary:
 				//      Get the Internet Explorer version (or false if other browser).
@@ -78,11 +106,11 @@
 				//      Version number
 				
 				var isIE;
-				var webkit = parseFloat(global.navigator.userAgent.split("WebKit/")[1]) || undefined;
-				if(!webkit){
-					if(global.navigator.userAgent.indexOf("Opera") === -1){
+				var appVersion = global.navigator.appVersion;
+				if(!module.has("webkit")){
+					if(!module.has("opera")){
 						if(global.document.all) {
-							isIE = parseFloat(global.navigator.appVersion.split("MSIE ")[1]) || undefined;
+							isIE = (parseFloat(appVersion.split("MSIE ")[1]) || undefined);
 							var mode = global.document.documentMode;
 							if(mode && mode !== 5 && Math.floor(isIE) !== mode){
 								isIE = mode;
@@ -95,16 +123,19 @@
 			}
 		},
 		
-		has: function(test){
+		has: function(test, reset){
 			// summary:
 			//		Perform a test, either using the cache of the previous test or
 			//		performing a new test.
 			// test: String
 			//		Test to perform.
+			// reset: Boolean
+			//		Reset the cache and perform the test again.
 			// returns: Mixed
 			//		Test result
-		
-			if(!module.isProperty(module.hasTestsCached, test)){
+			
+			reset = ((reset === undefined) ? false : true);
+			if((!module.isProperty(module.hasTestsCached, test)) || (reset)){
 				module.hasTestsCached[test] = module.hasTests[test]();
 			}
 			
