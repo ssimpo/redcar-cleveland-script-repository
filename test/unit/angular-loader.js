@@ -1,6 +1,8 @@
 "use strict";
 
 describe("Angular Loader Tester", function(){
+	var jQueryLib = "http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js";
+	
 	it("has", function(){
 	});
 	
@@ -80,21 +82,43 @@ describe("Angular Loader Tester", function(){
 		expect(angularLoader.getNodeAttributeValue(article, "class")).toEqual("TEST");
 	});
 	
-	it("querySelector", function(){
+	function testQuerySelector(selector) {
 		var article = document.createElement("article");
 		article.innerHTML = "<h1 class=\"TEST\"></h1><p>Test</p><p>More test</p>";
 		
-		var test = angularLoader.querySelector("[class=TEST]", article);
+		var test = selector("[class=TEST]", article);
 		expect(test.length).toBe(1);
 		expect(test[0].tagName.toLowerCase()).toBe("h1");
+	}
+	
+	it("querySelector", function(){
+		testQuerySelector(angularLoader.querySelector);
 	});
 	
 	it("getQuerySelector", function(){
+		angularLoader.libraryUrlOverride["jquery"] = jQueryLib;
+		var selectorLoaded = false;
+		var $;
+		
+		runs(function(){
+			angularLoader.getQuerySelector(function(selector){
+				$ = selector
+				selectorLoaded = true;
+			});
+		});
+		
+		waitsFor(function(){
+			return selectorLoaded;
+		}, "querySelector to be loaded", 7000);
+		
+		runs(function(){
+			testQuerySelector($);
+		});
 	});
 	
 	it("findAngularApps", function(){
 		var selectorLoaded = false;
-		angularLoader.libraryUrlOverride["jquery"] = "http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js";
+		angularLoader.libraryUrlOverride["jquery"] = jQueryLib;
 		
 		runs(function(){
 			angularLoader.loadQuerySelector(function(){
@@ -133,12 +157,29 @@ describe("Angular Loader Tester", function(){
 	});
 	
 	it("getProfileUrl", function(){
+		expect(angularLoader.getProfileUrl("test"))
+			.toBe(angularLoader.appsDir + "/test/app/profile.json");
+		expect(angularLoader.getProfileUrl("test2"))
+			.toBe(angularLoader.appsDir + "/test2/app/profile.json");
 	});
 	
 	it("addAppPathToUrl", function(){
+		expect(angularLoader.addAppPathToUrl("profile.json", "test"))
+			.toBe(angularLoader.appsDir + "/test/app/profile.json");
+		expect(angularLoader.addAppPathToUrl("profile2.json", "test2"))
+			.toBe(angularLoader.appsDir + "/test2/app/profile2.json");
 	});
 	
 	it("calculateLibraryPath", function(){
+		delete angularLoader.libraryUrlOverride["jquery"];
+		expect(angularLoader.calculateLibraryPath("jquery"))
+			.toBe(angularLoader.appsDir + "/lib/lib/jquery/jquery.min.js");
+		expect(angularLoader.calculateLibraryPath("jquery", false))
+			.toBe(angularLoader.appsDir + "/lib/lib/jquery/jquery.js");
+		
+		angularLoader.libraryUrlOverride["jquery"] = jQueryLib;
+		expect(angularLoader.calculateLibraryPath("jquery"))
+			.toBe(jQueryLib);
 	});
 	
 	it("ajaxGet", function(){

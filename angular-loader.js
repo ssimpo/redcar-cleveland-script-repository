@@ -26,6 +26,7 @@
 		],
 		loadedScripts: {},
 		libraryUrlOverride: {},
+		appsDir: "/apps",
 		
 		hasTests: {
 			"isJasmineTest": function(){
@@ -557,7 +558,7 @@
 			// returns: String
 			//		The profile url.
 			
-			return "/apps/" + appName + "/app/profile.json";
+			return module.addAppPathToUrl("profile.json", appName);
 		},
 			
 		addAppPathToUrl: function(url, appName){
@@ -571,7 +572,7 @@
 			// returns: String
 			//		The calculated full relative path.
 			
-			return "/apps/" + appName + "/app/" + url;
+			return module.appsDir + "/" + appName + "/app/" + url;
 		},
 			
 		calculateLibraryPath: function(id, useMin){
@@ -589,7 +590,7 @@
 			}
 			
 			useMin = ((useMin === undefined) ? true : useMin);
-			return "/apps/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
+			return module.appsDir + "/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
 		},
 		
 		ajaxGet: function(src, callback, errCallback){
