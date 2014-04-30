@@ -25,6 +25,7 @@
 			function(){return new global.ActiveXObject("Microsoft.XMLHTTP");}
 		],
 		loadedScripts: {},
+		libraryUrlOverride: {},
 		
 		hasTests: {
 			"isJasmineTest": function(){
@@ -232,13 +233,13 @@
 				if(constr.async){
 					script.async = true;
 				}
-				if (module.isProperty(constr, "id")) {
+				if(module.isProperty(constr, "id")){
 					script.id = constr.id;
 				}
-				if (constr.onload){
+				if(constr.onload){
 					module.addOnloadFunction(script, constr.onload, context);
 				}
-				if (constr.onerror){
+				if(constr.onerror){
 					script.onerror = module.bind(context, constr.onerror);
 				}
 				
@@ -355,16 +356,16 @@
 			//		The reference node.
 			// position: String|undefined
 			//		Where to place node in relation to refNode.  Four options:
-			//			First: Place node as the first child of refNode.
-			//			Last: Place node as the last child of refNode.
-			//			Before: Place node before refNode in the Dom tree.
-			//			After: Place node after refNode in the Dom tree
+			//			first: Place node as the first child of refNode.
+			//			last: Place node as the last child of refNode.
+			//			before: Place node before refNode in the Dom tree.
+			//			after: Place node after refNode in the Dom tree
 		
 			position = ((position === undefined) ? "last": position);
 			
 			switch(position.toLowerCase()){
 				case "first":
-					refnode.parentNode.insertBefore(node, refnode.parentNode.firstChild);
+					refnode.insertBefore(node, refnode.firstChild);
 					break;
 				case "last":
 					refnode.appendChild(node);
@@ -378,7 +379,7 @@
 			}
 		},
 		
-		getNodeAttribute: function(node, attribute){
+		getNodeAttributeValue: function(node, attribute){
 			// summary:
 			//		get an attribute of a node.
 			// description:
@@ -390,7 +391,7 @@
 			//		The attribute name to get.
 	
 			var result = (node.getAttribute && node.getAttribute(attribute)) || null;
-			if(!result) {
+			if(!result){
 				var attributes = node.attributes;
 				var length = attributes.length;
 				for(var i = 0; i < length; i++){
@@ -436,14 +437,19 @@
 				callback(global.$);
 			}else if(module.has("requireJs")){
 				global.define.amd = true;
-				global.require(["/apps/lib/lib/jquery/jquery.min.js"], callback);
+				global.require([module.calculateLibraryPath("jquery")], callback);
 			}else if(module.has("querySelectorAll")){
 				callback(module.querySelector);
 			}else{
+				
+				console.log(module.calculateLibraryPath("jquery"));
 				module.appendScript({
-					"src": "/apps/lib/lib/jquery/jquery.min.js",
+					"src": module.calculateLibraryPath("jquery"),
 					"onload": function(){
 						callback(global.$);
+					},
+					"onerror": function(e){
+						console.log(e);
 					}
 				});
 			}
@@ -456,7 +462,6 @@
 			//		The nodes found by the querySelector.
 			
 			context = ((context === undefined) ? global.document : context);
-			
 			return $("["+module.angularAppId+"]", context);
 		},
 		
@@ -468,7 +473,7 @@
 			// callback: Function
 			//		The callback to fire when the profile is loaded.
 			
-			var appName = module.getNodeAttribute(appDom, module.angularAppId);
+			var appName = module.getNodeAttributeValue(appDom, module.angularAppId);
 			var appProfileUrl = module.getProfileUrl(appName);
 			module.ajaxGet(appProfileUrl, function(data){
 				var i;
@@ -581,8 +586,11 @@
 			// returns: String
 			//		The path to the library.
 			
-			useMin = ((useMin === undefined) ? true : useMin);
+			if(module.isProperty(module.libraryUrlOverride, id)){
+				return module.libraryUrlOverride[id];
+			}
 			
+			useMin = ((useMin === undefined) ? true : useMin);
 			return "/apps/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
 		},
 		
@@ -794,13 +802,22 @@
 			}
 		},
 		
+		loadQuerySelector: function(callback){
+			// summary:
+			//		Load and assign the querySelector into the module scope.
+			
+			module.getQuerySelector(function(selector){
+				$ = selector;
+				callback();
+			});
+		},
+		
 		load: function(){
 			// summary:
 			//		Main module function.
 		
 			module.loadJsonParser(function(){
-				module.getQuerySelector(function(selector){
-					$ = selector;
+				module.loadQuerySelector(function(){
 					module.ready(global.window, module.loadApps);
 				});
 			});
