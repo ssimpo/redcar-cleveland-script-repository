@@ -3,3 +3,5 @@ syntax: glob
 *.gz
 *.komodoproject
 lib/*
+bin/scripts/node_modules
+test/lib/*

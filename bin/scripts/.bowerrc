@@ -1,0 +1,9 @@
+{
+    "directory": "../../lib",
+    "directoryDev": "../../test/lib",
+    "storage": {
+        "packages": "./node_modules/bower/.bower-cache",
+        "registry": "./node_modules/bower/.bower-registry"
+    },
+    "tmp": "./node_modules/bower/.bower-tmp"
+}
