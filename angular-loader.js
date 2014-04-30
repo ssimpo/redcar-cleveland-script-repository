@@ -267,10 +267,10 @@
 		//		Context to attach the event function to (defaults to
 		//		browser default).
 		
-		var returner = {};
 		func = ((context !== undefined) ? bind(context, func) : func);
-		onEventName = "on" + eventName;
-		attachFunc = function(){
+		var returner = {};
+		var onEventName = "on" + eventName;
+		var attachFunc = function(){
 			func.call(subject);
 		};
 		
@@ -457,8 +457,8 @@
 				"appNode": appDom
 			});
 			callback(data);
-		}, function(){
-			console.log("ERROR");
+		}, function(e){
+			console.error(e);
 		});
 	}
 	
