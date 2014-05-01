@@ -10,7 +10,7 @@ module.exports = function(grunt){
 			},
 			"unit": {
 				"autoWatch": true,
-				"browsers" : ["PhantomJS"]
+				"browsers" : ["Chrome"]
 			},
 			"ie-tests": {
 				"autoWatch": false,
@@ -25,6 +25,8 @@ module.exports = function(grunt){
 		}
 
 	});
+	
+	//"browsers" : ["PhantomJS"]
 	
 	grunt.registerTask("unit-tests", ["karma:unit"]);
 	grunt.registerTask("unit-tests-ie", ["karma:ie-tests"]);
