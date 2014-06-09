@@ -189,6 +189,20 @@
 			return bound;
 		},
 		
+		appendStyle: function(constr){
+			constr.position = (module.isProperty(constr, "position") ? constr.position : "last");
+			constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
+			
+			var link = global.document.createElement("link");
+			link.type = "text/stylesheet";
+			link.rel = "stylesheet";
+			link.href = constr.href;
+			
+			module.placeNode(link, constr.node, constr.position);
+			
+			return link;
+		},
+		
 		appendScript: function(constr){
 			// summary:
 			//      Insert a script into the DOM at a given point.
@@ -223,7 +237,7 @@
 			if(!module.isProperty(module.loadedScripts, constr.src)){
 				module.loadedScripts[constr.src] = true;
 				var context = ((module.isProperty(constr, "context")) ? constr.context : this);
-				var position = ((position === undefined) ? "last" : position);
+				var position = (module.isProperty(constr, "position") ? constr.position : "last");
 				constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
     
 				var script = global.document.createElement("script");
@@ -484,6 +498,9 @@
 					var id = data.libraries[i];
 					data.scripts.unshift(module.calculateLibraryPath(id));
 				}
+				for (i = 0; i < data.styles.length; i++) {
+					data.styles[i] = module.addAppPathToUrl(data.styles[i], appName);
+				}
 				
 				module.apps.push({
 					"appName": appName,
@@ -534,12 +551,21 @@
 			runNext();
 		},
 		
+		loadStyles: function(styles){
+			for(var i = 0; i < styles.length; i++){
+				module.appendStyle({
+					"href": styles[i]
+				});
+			}
+		},
+		
 		loadApps: function(){
 			// summary:
 			//		Load up all the Angular applications on the current page.
 			
 			var apps = module.findAngularApps();
 			var loader = function(profile){
+				module.loadStyles(profile.styles);
 				module.executeProfile(profile.scripts, function(){});
 			};
 			
