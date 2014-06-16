@@ -16,6 +16,7 @@
 	
 	var module = {
 		apps: [],
+		query: false,
 		hasTestsCached: {},
 		angularAppId: "rcbc-app",
 		XMLHttpFactories: [
@@ -586,7 +587,100 @@
 			
 			return module.addAppPathToUrl("profile.json", appName);
 		},
+		
+		getQueryUrlPart: function(){
+			// summary:
+			//		Get the query part of the current url
+			// returns: String
+			//		The query as a string
 			
+			if(global.location.href.indexOf('#')){
+				return global.location.href.slice(
+					global.location.href.indexOf('?') + 1,
+					global.location.href.indexOf('#')
+				);
+			}
+			
+			return global.location.href.slice(
+				global.location.href.indexOf('?') + 1
+			);
+		},
+		
+		getQueryObjectFromString: function(txt, splitter, asigner){
+			// summary:
+			//		Get a query object from the supplied string.
+			// description:
+			//		Given a string, extract a query object from its contents.
+			//		Expects a string in the normal url query-string format of
+			//		key1=value1&key=value2&key3=value3.  Defaults to splitting
+			//		the string into key/value pairs using '&' and splitting the
+			//		key and value using '='.  These defaults can be overriden
+			//		by supplying alternative splitter.
+			// txt: String
+			//		The query-string to extract an object from.
+			// splitter: String
+			//		Defaults to '&'.
+			// asigner: String
+			//		Defaults to '='
+			// returns: Object
+			//		The query object extracted from the supplied string.
+			
+			splitter = ((splitter === undefined) ? "&" : splitter);
+			asigner = ((asigner === undefined) ? "=" : asigner);
+			
+			var hash = {};
+			var query = txt.split(splitter);
+			for(var i = 0; i < query.length; i++){
+				var parts = query[i].split(asigner);
+				hash[parts[0]] = parts[1];
+			}
+			
+			return hash;
+		},
+		
+		getQueryObject: function(){
+			// summary:
+			//		Get a query object from current browser query-string.
+			// note:
+			//		Will extract a second object for the parametre
+			//		"angularClone", if it exists.  This object is split using
+			//		',' for key/value and ':' to split the key and value.
+			// returns: Object
+			//		The current query object.
+			
+			var query = module.getQueryUrlPart();
+			var hash = module.getQueryObjectFromString(query);
+			
+			if(module.isProperty(hash, "angularClone")){
+				hash.angularClone = module.getQueryObjectFromString(
+					hash.angularClone, ",", ":"
+				);
+			}
+			
+			return hash;
+		},
+		
+		getClonePathPart: function(appName){
+			// summary:
+			//		Extract query parametres and add clone route to the url if
+			//		one specified for the supplied Angular app.
+			// appName: string
+			//		The application to grab a clone path for.
+			// returns: string
+			//		The clone path, defaults to "".
+			
+			if(!module.query){
+				module.query = module.getQueryObject();
+			}
+			if(module.isProperty(module.query, "angularClone")){
+				if(module.isProperty(module.query.angularClone, appName)){
+					return "/clones/" + module.query.angularClone[appName];
+				}
+			}
+			
+			return "";
+		},
+		
 		addAppPathToUrl: function(url, appName){
 			// summary;
 			//		Add an app path (according to supplied app name) to the
@@ -598,7 +692,7 @@
 			// returns: String
 			//		The calculated full relative path.
 			
-			return module.appsDir + "/" + appName + "/app/" + url;
+			return module.appsDir + "/" + appName + module.getClonePathPart(appName) + "/app/" + url;
 		},
 			
 		calculateLibraryPath: function(id, useMin){
