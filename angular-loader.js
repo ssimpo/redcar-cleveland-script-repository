@@ -202,11 +202,10 @@
 				return global.document.createStyleSheet(constr.href);
 			}else{
 				var link = global.document.createElement("link");
-				
-				module.placeNode(link, constr.node, constr.position);
-				link.type = "text/stylesheet";
+				link.type = "text/css";
 				link.rel = "stylesheet";
 				link.href = constr.href;
+				module.placeNode(link, constr.node, constr.position);
 				return link;
 			}
 		},
