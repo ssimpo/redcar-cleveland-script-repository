@@ -194,18 +194,21 @@
 			return bound;
 		},
 		
-		appendStyle: function(constr){
+		appendStylesheet: function(constr){
 			constr.position = (module.isProperty(constr, "position") ? constr.position : "last");
 			constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
 			
-			var link = global.document.createElement("link");
-			link.type = "text/stylesheet";
-			link.rel = "stylesheet";
-			link.href = constr.href;
-			
-			module.placeNode(link, constr.node, constr.position);
-			
-			return link;
+			if(global.document.createStyleSheet){
+				return global.document.createStyleSheet(constr.href);
+			}else{
+				var link = global.document.createElement("link");
+				
+				module.placeNode(link, constr.node, constr.position);
+				link.type = "text/stylesheet";
+				link.rel = "stylesheet";
+				link.href = constr.href;
+				return link;
+			}
 		},
 		
 		appendScript: function(constr){
@@ -292,7 +295,10 @@
 			var func = function(e, detach){
 				if(!done && (!node.readyState || node.readyState === "loaded" || node.readyState === "complete")){
 					done = true;
-					detach();
+					try{
+						detach();
+					}catch(e){}
+					
 					boundOnload();
 				}
 			};
@@ -558,7 +564,7 @@
 		
 		loadStyles: function(styles){
 			for(var i = 0; i < styles.length; i++){
-				module.appendStyle({
+				module.appendStylesheet({
 					"href": styles[i]
 				});
 			}
