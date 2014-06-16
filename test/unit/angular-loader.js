@@ -170,6 +170,18 @@ describe("Angular Loader Tester", function(){
 			.toBe(angularLoader.appsDir + "/test2/app/profile2.json");
 	});
 	
+	it("getQueryUrlPart", function(){
+	});
+	
+	it("getQueryObjectFromString", function(){
+	});
+	
+	it("getQueryObject", function(){
+	});
+	
+	it("addClonePathToUrl", function(){
+	});
+	
 	it("calculateLibraryPath", function(){
 		delete angularLoader.libraryUrlOverride["jquery"];
 		expect(angularLoader.calculateLibraryPath("jquery"))
