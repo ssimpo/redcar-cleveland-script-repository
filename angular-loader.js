@@ -94,11 +94,15 @@
 				
 				var userAgent = global.navigator.userAgent;
 				var appVersion = parseFloat(global.navigator.appVersion);
-				return (
-					(appVersion >= 9.8) ?
-						(parseFloat(userAgent.split("Version/")[1]) || appVersion)
-						: appVersion
-				);
+				if(userAgent.indexOf("Opera") >= 0){
+					return (
+						(appVersion >= 9.8) ?
+							(parseFloat(userAgent.split("Version/")[1]) || appVersion)
+							: appVersion
+					);
+				}
+				
+				return undefined;
 			},
 			"ie": function(){
 				// summary:
@@ -252,10 +256,10 @@
 				if(module.isProperty(constr, "id")){
 					script.id = constr.id;
 				}
-				if(constr.onload){
+				if(module.isProperty(constr, "onload")){
 					module.addOnloadFunction(script, constr.onload, context);
 				}
-				if(constr.onerror){
+				if(module.isProperty(constr, "onerror")){
 					script.onerror = module.bind(context, constr.onerror);
 				}
 				
