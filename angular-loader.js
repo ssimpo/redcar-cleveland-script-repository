@@ -195,16 +195,55 @@
 		},
 		
 		appendStylesheet: function(constr){
+			// summary:
+			//		Insert a stylesheet into the DOM at a given point.
+			// description:
+			//		Load a stylesheet into the DOM at a given point. This will
+			//		not work as advertised on <IE10 but a work-around is used
+			//		to acheive the same affect.  In <IE10 the DOM node connot
+			//		be returned but a stylesheet object is returned instead.
+			// constr: object
+			//      Parameters object with properties:
+			//      node: object XMLNode
+			//          The reference node for insertion (eg. insert within
+			//          this node or insert after this). Defaults to the head.
+			//      href: string
+			//          The URL to load the stylesheet from.
+			//      onload: function
+			//          The callback function to fire when stylesheet has loaded.
+			//      onError: function
+			//          The fallback function if loading fails
+			//      context: object
+			//          The context to run onload/onerror within.
+			//      id: string
+			//          The script ID.
+			//      position:
+			//          The location in insert the node with reference to the
+			//          reference node : first, last, after, before.
+			//          Defaults to last.
+			// returns: XMLNode
+			//      The script node being used as a loader.
+			
 			constr.position = (module.isProperty(constr, "position") ? constr.position : "last");
 			constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
 			
 			if(global.document.createStyleSheet){
 				return global.document.createStyleSheet(constr.href);
 			}else{
+				var context = ((module.isProperty(constr, "context")) ? constr.context : this);
+				
 				var link = global.document.createElement("link");
 				link.type = "text/css";
 				link.rel = "stylesheet";
 				link.href = constr.href;
+				
+				if(module.isProperty(constr, "onload")){
+					module.addOnloadFunction(link, constr.onload, context);
+				}
+				if(module.isProperty(constr, "onerror")){
+					link.onerror = module.bind(context, constr.onerror);
+				}
+				
 				module.placeNode(link, constr.node, constr.position);
 				return link;
 			}
@@ -522,7 +561,7 @@
 			});
 		},
 		
-		executeProfile: function(mids, callback){
+		executeProfile: function(mids, callback, appName){
 			// summary:
 			//		Execute a profile and then call callback when complete.
 			// mids: Array
@@ -531,6 +570,7 @@
 			//		Function to callback when done loading scripts.
 			
 			var loaders = [];
+			
 			function runNext(){
 				if(loaders.length > 0){
 					var loader = loaders.shift();
