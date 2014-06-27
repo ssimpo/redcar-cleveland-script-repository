@@ -19,6 +19,7 @@
 		query: false,
 		hasTestsCached: {},
 		angularAppId: "rcbc-app",
+		angularModuleAspectDone: false,
 		XMLHttpFactories: [
 			function(){return new global.XMLHttpRequest();},
 			function(){return new global.ActiveXObject("Msxml2.XMLHTTP");},
@@ -571,7 +572,29 @@
 			
 			var loaders = [];
 			
+			function addAngularModuleAspect() {
+				if(module.isProperty(global, "angular")){
+					if(module.isProperty(global.angular, "module")){
+						var angularModule = global.angular.module;
+						global.angular.module = function(){
+							var appModule = angularModule.apply(
+								angularModule, arguments
+							);
+							
+							appModule.path = "/apps/" + arguments[0] + module.getClonePathPart(arguments[0]) + "/app";
+							return appModule;
+						};
+						module.angularModuleAspectDone = true;
+					}
+				}
+				
+			}
+			
 			function runNext(){
+				if(!module.angularModuleAspectDone){
+					addAngularModuleAspect();
+				}
+				
 				if(loaders.length > 0){
 					var loader = loaders.shift();
 					loader();
