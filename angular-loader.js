@@ -236,6 +236,7 @@
 				var link = global.document.createElement("link");
 				link.type = "text/css";
 				link.rel = "stylesheet";
+				link.media = "all";
 				link.href = constr.href;
 				
 				if(module.isProperty(constr, "onload")){
