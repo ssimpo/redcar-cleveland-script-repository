@@ -195,6 +195,31 @@
 			return bound;
 		},
 		
+		setDefaultProperty: function(obj, prop, defaultValue){
+			// summary:
+			//		Set a property on an object if it is not already present.
+			// description:
+			//		Set a property on an object to a specified default value
+			//		if the property is not already set.  Return the value of
+			//		the property.
+			// obj: object
+			//		The object to test property on.
+			// prop: string
+			//		The property to test for.
+			// defaultValue: mixed
+			//		The default value to use if the property is not set.
+			// returns: mixed
+			//		The value of the property.
+			
+			obj[prop] = (
+				(module.isProperty(obj, prop)) ?
+				obj[prop] :
+				defaultValue
+			);
+			
+			return obj[prop];
+		},
+		
 		appendStylesheet: function(constr){
 			// summary:
 			//		Insert a stylesheet into the DOM at a given point.
@@ -222,16 +247,19 @@
 			//          The location in insert the node with reference to the
 			//          reference node : first, last, after, before.
 			//          Defaults to last.
+			//		media:
+			//			The media attribute value.  Defaults to 'all'.
 			// returns: XMLNode
 			//      The script node being used as a loader.
 			
-			constr.position = (module.isProperty(constr, "position") ? constr.position : "last");
-			constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
+			module.setDefaultProperty(constr, "position", "last");
+			module.setDefaultProperty(constr, "node", module.getHeadNode());
+			module.setDefaultProperty(constr, "media", "all");
 			
 			if(global.document.createStyleSheet){
 				return global.document.createStyleSheet(constr.href);
 			}else{
-				var context = ((module.isProperty(constr, "context")) ? constr.context : this);
+				var context = module.setDefaultProperty(constr, "context", this);
 				
 				var link = global.document.createElement("link");
 				link.type = "text/css";
@@ -284,9 +312,9 @@
 				
 			if(!module.isProperty(module.loadedScripts, constr.src)){
 				module.loadedScripts[constr.src] = true;
-				var context = ((module.isProperty(constr, "context")) ? constr.context : this);
-				var position = (module.isProperty(constr, "position") ? constr.position : "last");
-				constr.node = ((module.isProperty(constr, "node")) ? constr.node : module.getHeadNode());
+				var context = module.setDefaultProperty(constr, "context", this);
+				var position = module.setDefaultProperty(constr, "position", "last");
+				module.setDefaultProperty(constr, "node", module.getHeadNode());
     
 				var script = global.document.createElement("script");
 				script.type = "text/javascript";
