@@ -884,7 +884,9 @@
 				if((request.status !== 200) && (request.status !== 304)){
 					errCallback(request);
 				}
-				detach();
+				if(detach){
+					detach();
+				}
 				callback(request.responseText);
 			}, request);
 			
@@ -957,14 +959,20 @@
 			var root = doc.documentElement;
 			
 			var init = function(e, detach){
-				if (e.type === "readystatechange" && doc.readyState !== "complete"){
-					return;
+				if(e !== undefined){
+					if (e.type === "readystatechange" && doc.readyState !== "complete"){
+						return;
+					}
 				}
 				if(detach !== undefined) {
 					detach();
 				}
 				if (!done && (done = true)){
-					callback.call(win, e.type || e);
+					if(e !== undefined){
+						callback.call(win, e.type || e);
+					}else{
+						callback.call(win);
+					}
 				}
 			};
 			
