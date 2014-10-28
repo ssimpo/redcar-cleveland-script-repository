@@ -1,6 +1,8 @@
 (function(global){
 	"use strict";
 	
+	Date.now = Date.now || function() {return +new Date;}; 
+	
 	// author:
 	//		Stephen Simpson <me@simpo.org>.
 	// summary:
@@ -162,6 +164,10 @@
 			return Object.prototype.hasOwnProperty.call(obj, key);
 		},
 		
+		isObject: function(value){
+			return ((typeof value == "object") && (value !== null))
+		},
+		
 		bind: function(context, func){
 			// summary:
 			//		Bind a function to a particular context.
@@ -257,14 +263,16 @@
 			module.setDefaultProperty(constr, "media", "all");
 			
 			if(global.document.createStyleSheet){
-				return global.document.createStyleSheet(constr.href);
+				var stylesheet = global.document.createStyleSheet(constr.href);
+				stylesheet.media = constr.media;
+				return stylesheet;
 			}else{
 				var context = module.setDefaultProperty(constr, "context", this);
 				
 				var link = global.document.createElement("link");
 				link.type = "text/css";
 				link.rel = "stylesheet";
-				link.media = "all";
+				link.media = constr.media;
 				link.href = constr.href;
 				
 				if(module.isProperty(constr, "onload")){
@@ -578,7 +586,11 @@
 					data.scripts.unshift(module.calculateLibraryPath(id));
 				}
 				for (i = 0; i < data.styles.length; i++) {
-					data.styles[i] = module.addAppPathToUrl(data.styles[i], appName);
+					if(module.isObject(data.styles[i])){
+						data.styles[i].href = module.addAppPathToUrl(data.styles[i].href, appName);
+					}else{
+						data.styles[i] = module.addAppPathToUrl(data.styles[i], appName);
+					}
 				}
 				
 				module.apps.push({
@@ -655,9 +667,14 @@
 		
 		loadStyles: function(styles){
 			for(var i = 0; i < styles.length; i++){
-				module.appendStylesheet({
-					"href": styles[i]
-				});
+				if(module.isObject(styles[i])){
+					module.appendStylesheet(styles[i]);
+				}else{
+					module.appendStylesheet({
+						"href": styles[i]
+					});
+				}
+				
 			}
 		},
 		
@@ -793,7 +810,8 @@
 			// returns: String
 			//		The calculated full relative path.
 			
-			return module.appsDir + "/" + appName + module.getClonePathPart(appName) + "/app/" + url;
+			
+			return module.appsDir + "/" + appName + module.getClonePathPart(appName) + "/app/" + url + "?cacheBust=" + Date.now().toString();
 		},
 			
 		calculateLibraryPath: function(id, useMin){
