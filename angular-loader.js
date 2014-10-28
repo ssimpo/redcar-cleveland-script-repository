@@ -666,6 +666,12 @@
 		},
 		
 		loadStyles: function(styles){
+			// summary:
+			//		Load series of stylesheets into the current document.
+			// styles: Array
+			//		Array of styleshhet urls objects dcescribing stylesheets
+			//		and their location.
+			
 			for(var i = 0; i < styles.length; i++){
 				if(module.isObject(styles[i])){
 					module.appendStylesheet(styles[i]);
