@@ -13,12 +13,13 @@
 	//		on any one page.
 	// todo:
 	//		Create Unit Tests
-	//		Get rid of Date.now() as will not work in IE8
 	
 	var $;
 	
 	var module = {
 		singleApp: false,
+		cacheBust: false,
+		cacheRandomId: null,
 		apps: [],
 		query: true,
 		hasTestsCached: {},
@@ -171,6 +172,44 @@
 		
 		isObject: function(value){
 			return ((typeof value == "object") && (value !== null))
+		},
+		
+		getRandomInteger: function(min, max){
+			return parseInt(Math.random() * (max - min) + min, 10);
+		},
+		
+		getRandomId: function(length){
+			var id = "";
+			for(var i = 1; i <= length; i++){
+				id += module.getRandomInteger(0, 9).toString();
+			}
+			return id;
+		},
+		
+		appendCacheBust: function(path){
+			if(!module.cacheBust){
+				return path;
+			}
+			
+			if(path.indexOf("#") > -1){
+				if((path.indexOf("?") === -1) || (path.indexOf("?" > path.indexOf("#") > -1))){
+					path += "?";
+				}else{
+					path += "&";
+				}
+			}else if(path.indexOf("?") === -1){
+				path += "?";
+			}else{
+				path += "&";
+			}
+			
+			module.cacheRandomId = (
+				(module.cacheRandomId !== null)?
+					module.cacheRandomId:
+					module.getRandomId(10)
+			);
+			
+			return path + "cacheBust=" + module.cacheRandomId;
 		},
 		
 		bind: function(context, func){
@@ -628,7 +667,8 @@
 						module.ajaxGet(bowerFiles[i], function(data){
 							mappings[i] = module.calculateLibraryPathFromPath(
 								libraries[i], data.main
-							) + "?cacheBust=" + Date.now().toString();
+							);
+							mappings[i] = module.appendCacheBust(mappings[i]);
 							
 							count++;
 							if(count >= libraries.length){
@@ -863,10 +903,14 @@
 			//		The calculated full relative path.
 			
 			if(!module.singleApp){
-				return module.appsDir + "/" + appName + module.getClonePathPart(appName)
-					+ "/app/" + url + "?cacheBust=" + Date.now().toString();
+				url = module.appendCacheBust(url);
+				
+				return  module.appendCacheBust(
+					module.appsDir + "/" + appName + module.getClonePathPart(appName)
+					+ "/app/" + url
+				);
 			}else{
-				return "/app/" + url + "?cacheBust=" + Date.now().toString();
+				return  module.appendCacheBust("/app/" + url);
 			}
 		},
 			
