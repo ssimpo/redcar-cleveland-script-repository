@@ -317,7 +317,7 @@
 				link.type = "text/css";
 				link.rel = "stylesheet";
 				link.media = constr.media;
-				link.href = constr.href;
+				link.href = module.appendCacheBust(constr.href);
 				
 				if(module.isProperty(constr, "onload")){
 					module.addOnloadFunction(link, constr.onload, context);
@@ -370,7 +370,7 @@
     
 				var script = global.document.createElement("script");
 				script.type = "text/javascript";
-				script.src = constr.src;
+				script.src = module.appendCacheBust(constr.src);
 				constr.async = ((module.isProperty(constr, "async")) ? constr.async : false);
 				
 				if(constr.async){
