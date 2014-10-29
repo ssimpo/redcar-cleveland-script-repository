@@ -13,6 +13,9 @@
 	//		on any one page.
 	// todo:
 	//		Create Unit Tests
+	//		Get rid of Date.now() as will not work in IE8
+	//		Use .bower.json file to find library file as not always in the
+	//			same place.
 	
 	var $;
 	
@@ -577,31 +580,65 @@
 			var appName = module.getNodeAttributeValue(appDom, module.angularAppId);
 			var appProfileUrl = module.getProfileUrl(appName);
 			module.ajaxGet(appProfileUrl, function(data){
-				var i;
-				
-				for (i = 0; i < data.scripts.length; i++) {
-					data.scripts[i] = module.addAppPathToUrl(data.scripts[i], appName);
-				}
-				for (i = (data.libraries.length-1); i >= 0; i--) {
-					var id = data.libraries[i];
-					data.scripts.unshift(module.calculateLibraryPath(id));
-				}
-				for (i = 0; i < data.styles.length; i++) {
+				for (var i = 0; i < data.styles.length; i++) {
 					if(module.isObject(data.styles[i])){
 						data.styles[i].href = module.addAppPathToUrl(data.styles[i].href, appName);
 					}else{
 						data.styles[i] = module.addAppPathToUrl(data.styles[i], appName);
 					}
 				}
+				for(i = 0; i < data.scripts.length; i++){
+					data.scripts[i] = module.addAppPathToUrl(data.scripts[i], appName);
+				}
 				
 				module.apps.push({
 					"appName": appName,
 					"appNode": appDom
 				});
-				callback(data);
+				
+				module.loadLibraryPaths(data.libraries, function(paths){
+					for (i = (paths.length-1); i >= 0; i--) {
+						data.scripts.unshift(paths[i]);
+					}
+					callback(data);
+				});
 			}, function(e){
 				console.error(e);
 			});
+		},
+		
+		loadLibraryPaths: function(libraries, callback){
+			var bowerFiles = [];
+			var mappings = [];
+			
+			for(var i = (libraries.length-1); i >= 0; i--){
+				var id = libraries[i];
+				bowerFiles.unshift(module.calculateLibraryBowerPath(id));
+			}
+			
+			var count = 0;
+			for(var i = (bowerFiles.length-1); i >= 0; i--){
+				if(bowerFiles[i].indexOf(".json") > -1){
+					(function(i){
+						module.ajaxGet(bowerFiles[i], function(data){
+							mappings[i] = module.calculateLibraryPathFromPath(
+								libraries[i], data.main
+							) + "?cacheBust=" + Date.now().toString();
+							
+							count++;
+							if(count >= libraries.length){
+								callback(mappings);
+							}
+						});
+					})(i);
+				}else{
+					mappings[i] = bowerFiles[i];
+				}
+				
+				if(count >= libraries.length){
+					callback(mappings);
+				}
+			}
 		},
 		
 		executeProfile: function(mids, callback, appName){
@@ -622,7 +659,6 @@
 							var appModule = angularModule.apply(
 								angularModule, arguments
 							);
-							
 							if(!module.singleApp){
 								appModule.path = "/apps/" + arguments[0] + module.getClonePathPart(arguments[0]) + "/app";
 							}else{
@@ -821,7 +857,6 @@
 			// returns: String
 			//		The calculated full relative path.
 			
-			
 			if(!module.singleApp){
 				return module.appsDir + "/" + appName + module.getClonePathPart(appName)
 					+ "/app/" + url + "?cacheBust=" + Date.now().toString();
@@ -849,6 +884,51 @@
 				return module.appsDir + "/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
 			}else{
 				return "/app/scripts/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
+			}
+		},
+		
+		calculateLibraryPathFromPath: function(id, path, useMin){
+			// summary:
+			//		Calculate the path to a given library from the library
+			//		relative path.
+			// id: String
+			//		The name of the library.
+			// path: string
+			//		The relative path of the file from the library root.
+			// useMin: Boolean | Undefined
+			//		Use the minified version of the library (defaults to true).
+			// returns: String
+			//		The path to the library.
+			
+			
+			useMin = ((useMin === undefined) ? true : useMin);
+			if(!module.singleApp){
+				return (module.appsDir + "/lib/lib/" + id + "/" + path).replace(
+					".js", (useMin)?".min.js":".js"
+				).replace("/./","/");
+			}else{
+				return ("/app/scripts/lib/" + id + "/" + path).replace(
+					".js", (useMin)?".min.js":".js"
+				).replace("/./","/");
+			}
+		},
+		
+		calculateLibraryBowerPath: function(id){
+			// summary:
+			//		Calculate the path to a given library bower profile.
+			// id: String
+			//		The name of the library.
+			// returns: String
+			//		The path to the library bower profile.
+			
+			if(module.isProperty(module.libraryUrlOverride, id)){
+				return module.libraryUrlOverride[id];
+			}
+			
+			if(!module.singleApp){
+				return module.appsDir + "/lib/lib/" + id + "/bower.json";
+			}else{
+				return "/app/scripts/lib/" + id + "/bower.json";
 			}
 		},
 		
