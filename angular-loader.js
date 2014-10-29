@@ -20,6 +20,7 @@
 		singleApp: false,
 		cacheBust: false,
 		cacheRandomId: null,
+		cacheBustParametre: "cacheBust",
 		apps: [],
 		query: true,
 		hasTestsCached: {},
@@ -189,6 +190,8 @@
 		appendCacheBust: function(path){
 			if(!module.cacheBust){
 				return path;
+			}else if(path.indexOf(module.cacheBustParametre + "=") > -1){
+				return path;
 			}
 			
 			if(path.indexOf("#") > -1){
@@ -209,7 +212,7 @@
 					module.getRandomId(10)
 			);
 			
-			return path + "cacheBust=" + module.cacheRandomId;
+			return path + module.cacheBustParametre + "=" + module.cacheRandomId;
 		},
 		
 		bind: function(context, func){
