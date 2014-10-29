@@ -14,15 +14,13 @@
 	// todo:
 	//		Create Unit Tests
 	//		Get rid of Date.now() as will not work in IE8
-	//		Use .bower.json file to find library file as not always in the
-	//			same place.
 	
 	var $;
 	
 	var module = {
 		singleApp: false,
 		apps: [],
-		query: false,
+		query: true,
 		hasTestsCached: {},
 		angularAppId: "rcbc-app",
 		angularModuleAspectDone: false,
@@ -543,18 +541,22 @@
 				callback(global.$);
 			}else if(module.has("requireJs")){
 				global.define.amd = true;
-				global.require([module.calculateLibraryPath("jquery")], callback);
+				module.loadLibraryPaths(["jquery"], function(libraries){
+					global.require([libraries[0]], callback);
+				});
 			}else if(module.has("querySelectorAll")){
 				callback(module.querySelector);
 			}else{
-				module.appendScript({
-					"src": module.calculateLibraryPath("jquery"),
-					"onload": function(){
-						callback(global.$);
-					},
-					"onerror": function(e){
-						console.log(e);
-					}
+				module.loadLibraryPaths(["jquery"], function(libraries){
+					module.appendScript({
+						"src": libraries[0],
+						"onload": function(){
+							callback(global.$);
+						},
+						"onerror": function(e){
+							console.log(e);
+						}
+					});
 				});
 			}
 		},
@@ -580,15 +582,15 @@
 			var appName = module.getNodeAttributeValue(appDom, module.angularAppId);
 			var appProfileUrl = module.getProfileUrl(appName);
 			module.ajaxGet(appProfileUrl, function(data){
+				for (i = 0; i < data.scripts.length; i++) {
+					data.scripts[i] = module.addAppPathToUrl(data.scripts[i], appName);
+				}
 				for (var i = 0; i < data.styles.length; i++) {
 					if(module.isObject(data.styles[i])){
 						data.styles[i].href = module.addAppPathToUrl(data.styles[i].href, appName);
 					}else{
 						data.styles[i] = module.addAppPathToUrl(data.styles[i], appName);
 					}
-				}
-				for(i = 0; i < data.scripts.length; i++){
-					data.scripts[i] = module.addAppPathToUrl(data.scripts[i], appName);
 				}
 				
 				module.apps.push({
@@ -1138,12 +1140,14 @@
 			if(module.has("jsonParser")){
 				callback();
 			}else{
-				module.appendScript({
-					"src": module.calculateLibraryPath("json3"),
-					"onload": function(){
-						global.JSON3.runInContext(module);
-						callback();
-					}
+				module.loadLibraryPaths(["json3"], function(libraries){
+					module.appendScript({
+						"src": libraries[0],
+						"onload": function(){
+							global.JSON3.runInContext(module);
+							callback();
+						}
+					});
 				});
 			}
 		},
