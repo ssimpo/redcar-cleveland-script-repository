@@ -163,7 +163,10 @@
 			//		Property value to test for.
 			// returns: Boolean
 			
-			return Object.prototype.hasOwnProperty.call(obj, key);
+			if(module.isObject(obj)){
+				return Object.prototype.hasOwnProperty.call(obj, key);
+			}
+			return false;
 		},
 		
 		isObject: function(value){
@@ -1162,10 +1165,34 @@
 			});
 		},
 		
+		getAngularLoaderScriptNode: function(){
+			var props = {};
+			var nodes = document.getElementsByTagName("script");
+			for(var i = 0; i <= nodes.length; i++){
+				if(module.isProperty(nodes[i], "src")){
+					if(nodes[i].src.indexOf("angular-loader.js") > -1){
+						var propsString = module.getNodeAttributeValue(nodes[i], "rcbc-prop");
+						if((propsString) && (propsString !== "")){
+							if(propsString.indexOf("{") > -1){
+								props = JSON.parse(propsString);
+							}
+						}
+					}
+				}
+			}
+			
+			return props;
+		},
+		
 		load: function(){
 			// summary:
 			//		Main module function.
-		
+			
+			var props = module.getAngularLoaderScriptNode();
+			for(var key in props){
+				module[key] = props[key];
+			}
+			
 			module.loadJsonParser(function(){
 				module.loadQuerySelector(function(){
 					module.ready(global.window, module.loadApps);
