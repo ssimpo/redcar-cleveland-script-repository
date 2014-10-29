@@ -17,6 +17,7 @@
 	var $;
 	
 	var module = {
+		singleApp: false,
 		apps: [],
 		query: false,
 		hasTestsCached: {},
@@ -622,7 +623,11 @@
 								angularModule, arguments
 							);
 							
-							appModule.path = "/apps/" + arguments[0] + module.getClonePathPart(arguments[0]) + "/app";
+							if(!module.singleApp){
+								appModule.path = "/apps/" + arguments[0] + module.getClonePathPart(arguments[0]) + "/app";
+							}else{
+								appModule.path = module.getClonePathPart(arguments[0]) + "/app";
+							}
 							return appModule;
 						};
 						module.angularModuleAspectDone = true;
@@ -817,7 +822,12 @@
 			//		The calculated full relative path.
 			
 			
-			return module.appsDir + "/" + appName + module.getClonePathPart(appName) + "/app/" + url + "?cacheBust=" + Date.now().toString();
+			if(!module.singleApp){
+				return module.appsDir + "/" + appName + module.getClonePathPart(appName)
+					+ "/app/" + url + "?cacheBust=" + Date.now().toString();
+			}else{
+				return "/app/" + url + "?cacheBust=" + Date.now().toString();
+			}
 		},
 			
 		calculateLibraryPath: function(id, useMin){
@@ -835,7 +845,11 @@
 			}
 			
 			useMin = ((useMin === undefined) ? true : useMin);
-			return module.appsDir + "/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
+			if(!module.singleApp){
+				return module.appsDir + "/lib/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
+			}else{
+				return "/app/scripts/lib/" + id + "/" + id + (useMin?".min":"") + ".js";
+			}
 		},
 		
 		ajaxGet: function(src, callback, errCallback){
