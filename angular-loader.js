@@ -175,6 +175,10 @@
 			return ((typeof value == "object") && (value !== null))
 		},
 		
+		isArray: function(value){
+			return (Object.prototype.toString.call(value) === "[object Array]");	
+		},
+		
 		getRandomInteger: function(min, max){
 			return parseInt(Math.random() * (max - min) + min, 10);
 		},
@@ -586,15 +590,15 @@
 				callback(global.$);
 			}else if(module.has("requireJs")){
 				global.define.amd = true;
-				module.loadLibraryPaths(["jquery"], function(libraries){
-					global.require([libraries[0]], callback);
+				module.loadLibraryPaths({"libraries":["jquery"]}, function(paths){
+					global.require([paths.libraries[0]], callback);
 				});
 			}else if(module.has("querySelectorAll")){
 				callback(module.querySelector);
 			}else{
-				module.loadLibraryPaths(["jquery"], function(libraries){
+				module.loadLibraryPaths({"libraries":["jquery"]}, function(paths){
 					module.appendScript({
-						"src": libraries[0],
+						"src": paths.libraries[0],
 						"onload": function(){
 							callback(global.$);
 						},
@@ -643,18 +647,22 @@
 					"appNode": appDom
 				});
 				
-				module.loadLibraryPaths(data.libraries, function(paths){
-					for (i = (paths.length-1); i >= 0; i--) {
-						data.scripts.unshift(paths[i]);
+				module.loadLibraryPaths(data, function(paths){
+					for (i = (paths.libraries.length-1); i >= 0; i--) {
+						data.scripts.unshift(paths.libraries[i]);
+					}
+					for (i = 0; i < paths.stylesheets.length; i++) {
+						data.styles.push(paths.stylesheets[i]);
 					}
 					callback(data);
-				});
+				}, data.styles);
 			}, function(e){
 				console.error(e);
 			});
 		},
 		
-		loadLibraryPaths: function(libraries, callback){
+		loadLibraryPaths: function(profile, callback){
+			var libraries = profile.libraries;
 			var bowerFiles = [];
 			var mappings = [];
 			
@@ -668,14 +676,12 @@
 				if(bowerFiles[i].indexOf(".json") > -1){
 					(function(i){
 						module.ajaxGet(bowerFiles[i], function(data){
-							mappings[i] = module.calculateLibraryPathFromPath(
-								libraries[i], data.main
-							);
-							mappings[i] = module.appendCacheBust(mappings[i]);
-							
+							mappings[i] = data.main;
 							count++;
 							if(count >= libraries.length){
-								callback(mappings);
+								callback(
+									module.flatenMappings(mappings, profile)
+								);
 							}
 						});
 					})(i);
@@ -684,9 +690,49 @@
 				}
 				
 				if(count >= libraries.length){
-					callback(mappings);
+					callback(
+						module.flatenMappings(mappings, profile)
+					);
 				}
 			}
+		},
+		
+		getFieleType: function(filename){
+			var parts = filename.split("#")[0].split("?")[0].split(".");
+			return parts[parts.length-1];
+		},
+		
+		flatenMappings: function(mappings, profile){
+			var libraries = profile.libraries;
+			var newMappings = {
+				"libraries": [],
+				"stylesheets": []
+			};
+			
+			for(var i=0; i < mappings.length; i++){
+				mappings[i] = ((module.isArray(mappings[i]))?mappings[i]:[mappings[i]]);
+				for(var ii=0; ii < mappings[i].length; ii++){
+					var type = module.getFieleType(mappings[i][ii]);
+					if(type === "js"){
+						newMappings.libraries.push(
+							module.appendCacheBust(
+								module.calculateLibraryPathFromPath(
+									libraries[i], mappings[i][ii]
+								)
+							)
+						);
+					}else if(type === "css"){
+						newMappings.stylesheets.push(
+							module.appendCacheBust(
+								module.calculateLibraryPathFromPath(
+									libraries[i], mappings[i][ii]
+								)
+							)
+						);
+					}
+				}
+			}
+			return newMappings;
 		},
 		
 		executeProfile: function(mids, callback, appName){
@@ -1190,9 +1236,9 @@
 			if(module.has("jsonParser")){
 				callback();
 			}else{
-				module.loadLibraryPaths(["json3"], function(libraries){
+				module.loadLibraryPaths({"libraries":["json3"]}, function(paths){
 					module.appendScript({
-						"src": libraries[0],
+						"src": paths.libraries[0],
 						"onload": function(){
 							global.JSON3.runInContext(module);
 							callback();
